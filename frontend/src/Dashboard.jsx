@@ -217,7 +217,7 @@ const Dashboard = ({ user }) => {
 
       <div className={`progress-container ${isRecalculating ? 'recalculating' : ''}`}>
         <div className="svg-wrapper">
-          <svg height={radius * 2} width={radius * 2} style={{ transform: 'rotate(-90deg)' }}>
+          <svg viewBox={`0 0 ${radius * 2} ${radius * 2}`} width="100%" height="100%" style={{ transform: 'rotate(-90deg)' }}>
             <circle stroke="var(--circle-bg)" fill="transparent" strokeWidth={strokeWidth} r={normalizedRadius} cx={radius} cy={radius} />
             <circle
               stroke={progressColor} fill="transparent" strokeWidth={strokeWidth}
