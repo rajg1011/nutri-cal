@@ -1,0 +1,85 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap');
+
+:root {
+  --bg-color: #f4f8f6;
+  --card-bg: #ffffff;
+  --text-primary: #1e332a;
+  --text-secondary: #748c82;
+  --primary-green: #21b86d;
+  --primary-green-hover: #1ba05e;
+  --circle-bg: #e5f0eb;
+  --border-color: #e2e8e5;
+  --disabled-btn: #aebaba;
+  --meal-card-bg: #f4f6f5;
+  --modal-overlay: rgba(30, 51, 42, 0.4);
+
+  /* Responsive Font Sizes */
+  --font-xs: 0.75rem;
+  --font-sm: 0.875rem;
+  --font-base: 1rem;
+  --font-lg: 1.125rem;
+  --font-xl: 1.25rem;
+  --font-2xl: 1.5rem;
+  --font-3xl: 1.875rem;
+  --font-4xl: 2.25rem;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  font-family: 'Outfit', sans-serif;
+  background-color: var(--bg-color);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+#root {
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+  min-height: 100vh;
+  background-color: var(--bg-color);
+  position: relative;
+}
+
+button,
+.icon-btn,
+.meal-btn,
+.fab {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+button {
+  font-family: 'Outfit', sans-serif;
+  cursor: pointer;
+  border: none;
+  background: none;
+}
+
+input {
+  font-family: 'Outfit', sans-serif;
+  border: none;
+  outline: none;
+}
+
+/* Custom Scrollbar for better mobile look */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #dbe2de;
+  border-radius: 10px;
+}
