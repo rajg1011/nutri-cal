@@ -78,6 +78,13 @@ const HistoryModal = ({ user, onClose }) => {
     fetchHistoryData();
   }, [user]);
 
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, []);
+
   const toggleExpand = (date) => {
     setExpandedDay(expandedDay === date ? null : date);
   };

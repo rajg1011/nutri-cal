@@ -1,8 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Leaf, SlidersHorizontal, Plus, Target, Flame, Trash2, User, History, LogOut } from 'lucide-react';
+import { Leaf, SlidersHorizontal, Plus, Target, Flame, Trash2, User, History, LogOut, Sparkles } from 'lucide-react';
 import './css/App.css';
+import './css/AIChatbot.css';
 import LogFoodModal from './LogFoodModal';
 import HistoryModal from './HistoryModal';
+import AIChatbot from './AIChatbot';
 import supabase from '../core/supabaseClient';
 
 const MEAL_ICONS = {
@@ -12,7 +14,7 @@ const MEAL_ICONS = {
   Snack: '🍎'
 };
 
-const Dashboard = ({ user }) => {
+const Dashboard = ({ user, session }) => {
   const [showLogFood, setShowLogFood] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
@@ -23,6 +25,7 @@ const Dashboard = ({ user }) => {
   const [pendingTarget, setPendingTarget] = useState(null);
   const [targetError, setTargetError] = useState(null);
   const [isRecalculating, setIsRecalculating] = useState(false);
+  const [showAIChat, setShowAIChat] = useState(false);
   const [logs, setLogs] = useState([]);
 
   const consumed = logs.reduce((acc, log) => acc + log.calories, 0);
@@ -183,6 +186,9 @@ const Dashboard = ({ user }) => {
           <h1 className="date-title">March 28th</h1>
         </div>
         <div className="header-actions">
+          <button className="icon-btn" style={{ color: 'var(--primary-green)' }} onClick={() => setShowAIChat(true)}>
+            <Sparkles size={18} fill="currentColor" />
+          </button>
           <button className="icon-btn" onClick={() => setShowSettings(!showSettings)}><SlidersHorizontal size={18} /></button>
           <div className="dropdown-wrapper" ref={dropdownRef}>
             <button className="icon-btn" onClick={() => setShowDropdown(p => !p)}>
@@ -298,6 +304,15 @@ const Dashboard = ({ user }) => {
       <div style={{ height: '100px' }}></div>
 
       {showLogFood && <LogFoodModal user={user} onClose={() => setShowLogFood(false)} onAdd={handleAddFood} />}
+
+      {showAIChat && (
+        <AIChatbot 
+          user={user} 
+          session={session}
+          stats={{ consumed, dailyTarget, remaining, totalProtein }} 
+          onClose={() => setShowAIChat(false)} 
+        />
+      )}
 
       {pendingTarget !== null && (
         <div className="modal-overlay fade-in">

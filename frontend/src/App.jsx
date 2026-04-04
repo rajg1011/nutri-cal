@@ -19,18 +19,20 @@ const PublicRoute = ({ user, loading, children }) => {
 
 function App() {
   const [user, setUser] = useState(null);
+  const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      const newUser = session?.user ?? null;
-      setUser(newUser);
+      setSession(session);
+      setUser(session?.user ?? null);
       setLoading(false);
     });
 
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      const newUser = session?.user ?? null;
+      setSession(session);
       setUser(prevUser => {
+        const newUser = session?.user ?? null;
         if (prevUser?.id === newUser?.id) return prevUser;
         return newUser;
       });
@@ -71,7 +73,7 @@ function App() {
         path="/dashboard"
         element={
           <ProtectedRoute user={user} loading={loading}>
-            <Dashboard user={user} />
+            <Dashboard user={user} session={session} />
           </ProtectedRoute>
         }
       />
