@@ -182,8 +182,22 @@ const Dashboard = ({ user, session }) => {
     <div className="app-container fade-in">
       <header className="header">
         <div className="header-left">
-          <div className="day-subtitle"><Leaf size={14} /> SATURDAY</div>
-          <h1 className="date-title">March 28th</h1>
+          <div className="day-subtitle">
+            <Leaf size={14} /> {new Date().toLocaleDateString('en-US', { weekday: 'long' }).toUpperCase()}
+          </div>
+          <h1 className="date-title">
+            {new Date().toLocaleDateString('en-US', { month: 'long' })} {new Date().getDate()}
+            {(() => {
+              const d = new Date().getDate();
+              if (d > 3 && d < 21) return 'th';
+              switch (d % 10) {
+                case 1: return 'st';
+                case 2: return 'nd';
+                case 3: return 'rd';
+                default: return 'th';
+              }
+            })()}
+          </h1>
         </div>
         <div className="header-actions">
           <button className="icon-btn" style={{ color: 'var(--primary-green)' }} onClick={() => setShowAIChat(true)}>
