@@ -44,7 +44,7 @@ const HistoryModal = ({ user, onClose }) => {
         if (goalsError) throw goalsError;
 
         const historyList = [];
-        for (let i = 0; i < 10; i++) {
+        for (let i = 1; i <= 10; i++) {
           const date = new Date();
           date.setDate(today.getDate() - i);
           const dateStr = date.toISOString().split('T')[0];
