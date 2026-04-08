@@ -139,7 +139,10 @@ const LogFoodModal = ({ user, onClose, onAdd }) => {
   };
 
   const adjustQuantity = (amount) => {
-    setQuantity(prev => Math.max(0.5, prev + amount));
+    setQuantity(prev => {
+      const current = parseFloat(prev) || 0;
+      return Math.max(0.5, current + amount);
+    });
   };
 
   const handleSaveToMyFoods = async () => {
@@ -367,7 +370,17 @@ const LogFoodModal = ({ user, onClose, onAdd }) => {
                     <ChevronLeft size={20} />
                   </button>
                   <div className="q-value-display">
-                    <span className="q-number">{quantity}</span>
+                    <input 
+                      type="number" 
+                      className="q-number-input" 
+                      value={quantity} 
+                      onChange={(e) => setQuantity(e.target.value === '' ? '' : parseFloat(e.target.value))}
+                      onBlur={() => {
+                        if (quantity === '' || quantity < 0.5) setQuantity(0.5);
+                      }}
+                      step="0.5"
+                      min="0.5"
+                    />
                     <span className="q-unit">{selectedFood.unit}</span>
                   </div>
                   <button className="q-btn" onClick={() => adjustQuantity(0.5)}>
