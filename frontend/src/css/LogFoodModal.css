@@ -55,6 +55,8 @@
   justify-content: space-between;
   align-items: center;
   padding: 16px 20px 12px;
+  position: relative;
+  z-index: 1;
 }
 
 @media (min-width: 480px) {
@@ -85,6 +87,14 @@
   gap: 20px;
   overflow-y: auto;
   flex: 1;
+  position: relative;
+  z-index: 2;
+}
+
+@media (max-width: 480px) {
+  .modal-body {
+    overflow-y: visible;
+  }
 }
 
 @media (min-width: 480px) {
@@ -204,6 +214,32 @@
   padding: 8px;
   border: 1px solid var(--border-color);
   animation: fadeIn 0.2s ease;
+}
+
+/* Custom Scrollbar for Dropdown */
+.search-results-dropdown::-webkit-scrollbar {
+  width: 6px;
+}
+
+.search-results-dropdown::-webkit-scrollbar-track {
+  background: transparent;
+  margin: 10px 0;
+}
+
+.search-results-dropdown::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 10px;
+}
+
+.search-results-dropdown::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+@media (max-width: 480px) {
+  .search-results-dropdown {
+    top: auto;
+    bottom: calc(100% + 8px);
+  }
 }
 
 .search-result-item {
