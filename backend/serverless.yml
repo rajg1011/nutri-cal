@@ -1,0 +1,11 @@
+service: express-lambda
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+
+functions:
+  app:
+    handler: handler.handler
+    events:
+      - httpApi: '*'

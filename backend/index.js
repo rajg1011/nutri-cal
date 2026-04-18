@@ -14,7 +14,9 @@ app.use(AuthMiddleWare)
 app.use("/api/chatbot", aiChatbotRoutes);
 app.use("/payment", paymentRoutes)
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log(`NutriCal Backend is running on port ${PORT}`);
-});
+// const PORT = process.env.PORT || 3000;
+// app.listen(PORT, () => {
+//     console.log(`NutriCal Backend is running on port ${PORT}`);
+// });
+
+export default app;
