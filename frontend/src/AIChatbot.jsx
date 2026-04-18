@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, X, Bot, User, Sparkles, ChevronDown } from 'lucide-react';
+import { Send, X, Sparkles } from 'lucide-react';
 import './css/AIChatbot.css';
+import useScrollLock from './hooks/useScrollLock';
 
-const AIChatbot = ({ user, session, stats, onClose }) => {
+const AIChatbot = ({ user, session, onClose }) => {
   const [messages, setMessages] = useState([
     {
       id: 1,
@@ -14,6 +15,8 @@ const AIChatbot = ({ user, session, stats, onClose }) => {
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef(null);
 
+  useScrollLock();
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -22,12 +25,6 @@ const AIChatbot = ({ user, session, stats, onClose }) => {
     scrollToBottom();
   }, [messages, isTyping]);
 
-  useEffect(() => {
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = 'unset';
-    };
-  }, []);
 
   const handleSend = async () => {
     if (!input.trim()) return;
@@ -40,7 +37,7 @@ const AIChatbot = ({ user, session, stats, onClose }) => {
 
     try {
       // Calling the local backend API
-      const response = await fetch('http://localhost:3000/api/chatbot/chat', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/chatbot/chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -133,19 +130,19 @@ const AIChatbot = ({ user, session, stats, onClose }) => {
 
         <div className="ai-chat-input-area">
           <div className="chat-input-wrapper">
-            {/* <input
+            <input
               type="text"
               className="chat-input"
               placeholder="Ask anything..."
               value={input}
               onChange={e => setInput(e.target.value)}
               onKeyPress={e => e.key === 'Enter' && handleSend()}
-            /> */}
-            <span className="chat-input">AI is making itself better </span>
+            />
+            {/* <span className="chat-input">AI is making itself better </span> */}
             <button
               className="send-chat-btn"
-              // disabled={!input.trim() || isTyping}
-              disabled= {true}
+              disabled={!input.trim() || isTyping}
+              // disabled= {true}
               onClick={handleSend}
             >
               <Send size={18} />

@@ -2,6 +2,7 @@ import  { useState, useEffect } from 'react';
 import { X, RotateCcw, ChevronDown, ChevronUp, Info, Activity, Flame, Target } from 'lucide-react';
 import supabase from '../core/supabaseClient';
 import './css/HistoryModal.css';
+import useScrollLock from './hooks/useScrollLock';
 
 const HistoryModal = ({ user, onClose }) => {
   const [history, setHistory] = useState([]);
@@ -78,12 +79,7 @@ const HistoryModal = ({ user, onClose }) => {
     fetchHistoryData();
   }, [user]);
 
-  useEffect(() => {
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = 'unset';
-    };
-  }, []);
+  useScrollLock();
 
   const toggleExpand = (date) => {
     setExpandedDay(expandedDay === date ? null : date);

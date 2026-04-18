@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+ import { ToastContainer } from 'react-toastify';
 import supabase from '../core/supabaseClient';
 import Login from './Login';
 import Dashboard from './Dashboard';
@@ -57,6 +58,7 @@ function App() {
   };
 
   return (
+    <>
     <Routes>
 
       <Route
@@ -86,6 +88,8 @@ function App() {
         }
       />
     </Routes>
+     <ToastContainer position="top-center" autoClose={2000} />
+    </>
   );
 }
 

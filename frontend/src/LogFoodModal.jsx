@@ -3,6 +3,7 @@ import { X, Search, ChevronLeft, ChevronRight, Flame, Bookmark, BookmarkCheck } 
 import supabase from '../core/supabaseClient';
 import LoadingScreen from './LoadingScreen';
 import './css/LogFoodModal.css';
+import useScrollLock from './hooks/useScrollLock';
 
 const MEALS = [
   { id: 'Breakfast', icon: '🌅', label: 'Breakfast' },
@@ -187,12 +188,7 @@ const LogFoodModal = ({ user, onClose, onAdd }) => {
     }
   }, [isSavingPreference]);
 
-  useEffect(() => {
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = 'unset';
-    };
-  }, []);
+  useScrollLock();
 
   return (
     <div className="modal-overlay">

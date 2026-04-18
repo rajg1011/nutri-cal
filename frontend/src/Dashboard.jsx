@@ -5,7 +5,10 @@ import './css/AIChatbot.css';
 import LogFoodModal from './LogFoodModal';
 import HistoryModal from './HistoryModal';
 import AIChatbot from './AIChatbot';
+import SubscriptionModal from './SubscriptionModal';
 import supabase from '../core/supabaseClient';
+import { usePayment } from './hooks/usePayment';
+import LoadingScreen from './LoadingScreen';
 
 const MEAL_ICONS = {
   Breakfast: '🌅',
@@ -26,6 +29,9 @@ const Dashboard = ({ user, session }) => {
   const [targetError, setTargetError] = useState(null);
   const [isRecalculating, setIsRecalculating] = useState(false);
   const [showAIChat, setShowAIChat] = useState(false);
+  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
+  const [isCheckingSub, setIsCheckingSub] = useState(false);
+  const { pay, error, isLoading: loadingPayment } = usePayment({ user, session })
   const [logs, setLogs] = useState([]);
 
   const consumed = logs.reduce((acc, log) => acc + log.calories, 0);
@@ -167,6 +173,35 @@ const Dashboard = ({ user, session }) => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  const handleAIChatClick = async () => {
+    if (isCheckingSub) return;
+    setIsCheckingSub(true);
+    try {
+      const { data, error } = await supabase
+        .from('userSubscritionsDetails')
+        .select('plan,subscription_status')
+        .eq('user_id', user.id);
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error fetching subscription:', error);
+        setShowSubscriptionModal(true);
+        return;
+      }
+
+      const plan = data[0]?.plan?.toLowerCase() || 'free';
+      if ((plan === 'pro' || plan === 'question') && data[0]?.subscription_status?.toLowerCase() === 'confirm') {
+        setShowAIChat(true);
+      } else {
+        setShowSubscriptionModal(true);
+      }
+    } catch (err) {
+      console.error('Subscription check failed:', err);
+      setShowSubscriptionModal(true);
+    } finally {
+      setIsCheckingSub(false);
+    }
+  };
+
   const handleSignOut = async () => {
     setShowDropdown(false);
     await supabase.auth.signOut();
@@ -200,7 +235,12 @@ const Dashboard = ({ user, session }) => {
           </h1>
         </div>
         <div className="header-actions">
-          <button className="icon-btn" style={{ color: 'var(--primary-green)' }} onClick={() => setShowAIChat(true)}>
+          <button
+            className={`icon-btn ${isCheckingSub ? 'loading-sparkle' : ''}`}
+            style={{ color: 'var(--primary-green)' }}
+            onClick={handleAIChatClick}
+            disabled={isCheckingSub}
+          >
             <Sparkles size={18} fill="currentColor" />
           </button>
           <button className="icon-btn" onClick={() => setShowSettings(!showSettings)}><SlidersHorizontal size={18} /></button>
@@ -320,11 +360,10 @@ const Dashboard = ({ user, session }) => {
       {showLogFood && <LogFoodModal user={user} onClose={() => setShowLogFood(false)} onAdd={handleAddFood} />}
 
       {showAIChat && (
-        <AIChatbot 
-          user={user} 
+        <AIChatbot
+          user={user}
           session={session}
-          stats={{ consumed, dailyTarget, remaining, totalProtein }} 
-          onClose={() => setShowAIChat(false)} 
+          onClose={() => setShowAIChat(false)}
         />
       )}
 
@@ -354,6 +393,19 @@ const Dashboard = ({ user, session }) => {
       )}
 
       {showHistory && <HistoryModal user={user} onClose={() => setShowHistory(false)} />}
+
+      {loadingPayment && <LoadingScreen />}
+
+      {showSubscriptionModal && (
+        <SubscriptionModal
+          onClose={() => setShowSubscriptionModal(false)}
+          onUpgrade={async (plan) => {
+            if (error) toast.error(error)
+            pay(plan)
+            setShowSubscriptionModal(false);
+          }}
+        />
+      )}
     </div>
   );
 };
