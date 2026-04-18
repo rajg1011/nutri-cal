@@ -4,7 +4,7 @@ import { toast } from "react-toastify";
 
 const createOrder = async (subs, session) => {
     try {
-        const { data } = await axios.post(`http://localhost:3000/payment/order`, { subscription: subs }, {
+        const { data } = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/payment/order`, { subscription: subs }, {
             headers: {
                 Authorization: `Bearer ${session.access_token}`
             }
@@ -23,7 +23,7 @@ const verifyPayment = async (response, session) => {
             payment_id: response.razorpay_payment_id,
             signature: response.razorpay_signature
         };
-        const { data } = await axios.post(`http://localhost:3000/payment/verify`, payload, {
+        const { data } = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/payment/verify`, payload, {
             headers: {
                 Authorization: `Bearer ${session.access_token}`
             }
