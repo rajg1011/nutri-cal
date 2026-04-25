@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useRazorpay } from "react-razorpay";
 import axios from "axios";
 import { toast } from "react-toastify";
@@ -40,6 +41,7 @@ const verifyPayment = async (response, session) => {
 
 export const usePayment = ({ user, session }) => {
     const { error, isLoading, Razorpay } = useRazorpay();
+    const [isProcessing, setIsProcessing] = useState(false);
 
     const pay = async (subscription) => {
         if (!Razorpay) {
@@ -47,29 +49,49 @@ export const usePayment = ({ user, session }) => {
             return;
         }
 
-        const orderData = await createOrder(subscription, session);
-        if (!orderData) return;
-
-        const { order_id, amount } = orderData;
-
-        const razorpayInstance = new Razorpay({
-            key: import.meta.env.VITE_RAZORPAY_API_KEY,
-            order_id,
-            currency: "INR",
-            name: "NutriCal AI",
-            amount,
-            prefill: {
-                name: user.user_metadata?.full_name || '',
-                email: user.email,
-            },
-            handler: (response) => verifyPayment(response, session),
-            theme: {
-                color: "#21b86d",
+        setIsProcessing(true);
+        try {
+            const orderData = await createOrder(subscription, session);
+            if (!orderData) {
+                setIsProcessing(false);
+                return;
             }
-        });
 
-        razorpayInstance.open();
+            const { order_id, amount } = orderData;
+
+            const razorpayInstance = new Razorpay({
+                key: import.meta.env.VITE_RAZORPAY_API_KEY,
+                order_id,
+                currency: "INR",
+                name: "NutriCal AI",
+                amount,
+                prefill: {
+                    name: user.user_metadata?.full_name || '',
+                    email: user.email,
+                },
+                handler: async (response) => {
+                    setIsProcessing(true);
+                    await verifyPayment(response, session);
+                    setIsProcessing(false);
+                },
+                modal: {
+                    ondismiss: () => {
+                        setIsProcessing(false);
+                    }
+                },
+                theme: {
+                    color: "#21b86d",
+                }
+            });
+
+            razorpayInstance.open();
+            setIsProcessing(false);
+        } catch (err) {
+            console.error("Payment error:", err);
+            toast.error("Failed to initiate payment");
+            setIsProcessing(false);
+        }
     };
 
-    return { pay, error, isLoading };
+    return { pay, error, isLoading: isProcessing, isSDKLoading: isLoading };
 };

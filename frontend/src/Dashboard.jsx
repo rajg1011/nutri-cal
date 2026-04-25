@@ -9,6 +9,7 @@ import SubscriptionModal from './SubscriptionModal';
 import supabase from '../core/supabaseClient';
 import { usePayment } from './hooks/usePayment';
 import LoadingScreen from './LoadingScreen';
+import { toast } from 'react-toastify';
 
 const MEAL_ICONS = {
   Breakfast: '🌅',
