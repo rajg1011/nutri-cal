@@ -2,6 +2,7 @@ service: express-lambda
 
 provider:
   name: aws
+  region: ap-south-1
   runtime: nodejs18.x
 
 functions:

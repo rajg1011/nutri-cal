@@ -71,7 +71,7 @@ export const usePayment = ({ user, session }) => {
                 },
                 handler: async (response) => {
                     setIsProcessing(true);
-                    await verifyPayment(response, session);
+                    if(subscription === Object.keys(SUBSCRIPTION_TYPE)?.[1]) await verifyPayment(response, session);
                     setIsProcessing(false);
                 },
                 modal: {

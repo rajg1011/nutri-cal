@@ -41,7 +41,7 @@ export const razorPay = (() => {
             try {
                 const params = {
                     "plan_id": process.env.RAZORPAY_PLAN_ID_199,
-                    "total_count": null,
+                    "total_count": 100,
                     "quantity": 1,
                     "customer_notify": 1,
                     "start_at": Math.floor(Date.now() / 1000),
