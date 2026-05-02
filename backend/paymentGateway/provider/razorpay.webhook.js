@@ -1,9 +1,9 @@
-import { handlePaymentAuthorizedLogic } from '../../modules/payment/payment.webhook';
-const { validateWebhookSignature } = require('razorpay/dist/utils/razorpay-utils')
+import { handlePaymentAuthorizedLogic } from '../../modules/payment/payment.webhook.js';
+import Razorpay from "razorpay";
 
 const validWebhook = async (req) => {
     const signature = req.headers["x-razorpay-signature"];
-    const isValid = validateWebhookSignature(
+    const isValid = Razorpay.validateWebhookSignature(
         JSON.stringify(req.body),
         signature,
         process.env.RAZORPAY_WEBHOOK_SECRET
@@ -21,7 +21,8 @@ const eventParser = (req) => {
 }
 
 
-const handleWebhookLogic = async ({ event, payload }) => {
+const handleWebhookLogic = async (req) => {
+    const { event, payload } = req.body
     switch (event) {
         case "payment.authorized":
             const { id: payment_id, order_id, } = payload.payment.entity;
@@ -45,12 +46,19 @@ const handleWebhookLogic = async ({ event, payload }) => {
 }
 
 
-export const razorPay = (async (req) => {
-    const { event, payload } = req.body;
+export const razorPay = (async () => {
     return {
-        validateWebhookSignature: validWebhook(req),
-        eventParser: eventParser(req),
-        getEventid: getEventid(req),
-        webhookHandler: handleWebhookLogic({ event, payload })
+        validateWebhookSignature: async (req) => {
+            return await validWebhook(req)
+        },
+        eventParser: (req) => {
+            return eventParser(req)
+        },
+        getEventid: () => {
+            return getEventid(req)
+        },
+        webhookHandler: async (req) => {
+            return await handleWebhookLogic(req)
+        }
     }
 })()

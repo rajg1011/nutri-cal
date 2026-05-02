@@ -1,5 +1,5 @@
 import express from "express";
-import paymentServiceWebhook from "../paymentGateway/paymentService.webhook";
+import paymentServiceWebhook from "../paymentGateway/paymentService.webhook.js";
 
 const router = express.Router();
 

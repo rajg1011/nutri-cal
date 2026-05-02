@@ -1,5 +1,5 @@
-import paymentServiceWebhook from "../paymentGateway/paymentService.webhook";
-import supabaseAdmin from "../utils/supabaseAdmin";
+import paymentServiceWebhook from "../paymentGateway/paymentService.webhook.js";
+import supabaseAdmin from "../utils/supabaseAdmin.js";
 
 
 const checkDuplicateEvent = async (req, res, next) => {
