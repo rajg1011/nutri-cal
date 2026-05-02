@@ -64,7 +64,6 @@ export const usePayment = ({ user, session }) => {
                 key: import.meta.env.VITE_RAZORPAY_API_KEY,
                 currency: "INR",
                 name: "NutriCal AI",
-                amount,
                 prefill: {
                     name: user.user_metadata?.full_name || '',
                     email: user.email,
@@ -84,7 +83,8 @@ export const usePayment = ({ user, session }) => {
                 }
             }
             if (subscription === Object.keys(SUBSCRIPTION_TYPE)?.[1]) {
-                razorPayOptions.order_id = order_id
+                razorPayOptions.order_id = order_id,
+                amount
             } else {
                 razorPayOptions.subscription_id = import.meta.env.VITE_RAZORPAY_PLAN_ID_199
             }
