@@ -15,8 +15,11 @@ const paymentService = (() => {
             createOrder: async ({ amount, subscription, user_id }) => {
                 return await functionCall.createOrder({ amount, subscription, user_id })
             },
-            verifyPayment: async (body) => {
-                return await functionCall.verifyPayment({ order_id: body.order_id, payment_id: body.payment_id, signature: body.signature })
+            verifyPayment: async ({order_id, payment_id, signature}) => {
+                return await functionCall.verifyPayment({order_id, payment_id, signature})
+            },
+            createProPlanSubscription: async ({ user_id }) => {
+                return await functionCall.createProPlanSubscription({ user_id })
             }
         }
     } catch (e) {

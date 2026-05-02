@@ -2,10 +2,12 @@ import { useState } from "react";
 import { useRazorpay } from "react-razorpay";
 import axios from "axios";
 import { toast } from "react-toastify";
+import { SUBSCRIPTION_TYPE } from "../../utils/constant";
 
 const createOrder = async (subs, session) => {
     try {
-        const { data } = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/payment/order`, { subscription: subs }, {
+        const url = subs === "PRO" ? 'plan' : 'order'
+        const { data } = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/payment/${url}`, { subscription: subs }, {
             headers: {
                 Authorization: `Bearer ${session.access_token}`
             }
@@ -58,10 +60,8 @@ export const usePayment = ({ user, session }) => {
             }
 
             const { order_id, amount } = orderData;
-
-            const razorpayInstance = new Razorpay({
+            const razorPayOptions = {
                 key: import.meta.env.VITE_RAZORPAY_API_KEY,
-                order_id,
                 currency: "INR",
                 name: "NutriCal AI",
                 amount,
@@ -82,7 +82,14 @@ export const usePayment = ({ user, session }) => {
                 theme: {
                     color: "#21b86d",
                 }
-            });
+            }
+            if (subscription === Object.keys(SUBSCRIPTION_TYPE)?.[1]) {
+                razorPayOptions.order_id = order_id
+            } else {
+                razorPayOptions.subscription_id = import.meta.env.VITE_RAZORPAY_PLAN_ID_199
+            }
+
+            const razorpayInstance = new Razorpay(razorPayOptions);
 
             razorpayInstance.open();
             setIsProcessing(false);

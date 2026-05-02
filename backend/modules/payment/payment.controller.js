@@ -1,22 +1,26 @@
+import { SUBSCRIPTION_TYPE } from "../../constant.js"
 import paymentService from "../../paymentGateway/paymentService.js"
 import supabaseAdmin from "../../utils/supabaseAdmin.js"
 
-const SUBSCRIPTION_PRICE = {
-    "PRO": 199,
-    "QUESTION": 49
-}
 
 const createOrderController = async (req, res) => {
     try {
         if (!req.body || !req.body.subscription) {
             return res.status(400).json({ success: false, message: "Subscription is required" })
         }
-        const subsPrice = SUBSCRIPTION_PRICE[req.body.subscription.toUpperCase()]
-        if (!subsPrice) {
-            return res.status(500).json({ success: false, message: "Internal Server Error" })
+        if (!Object.keys(SUBSCRIPTION_TYPE).includes(req.body.subscription.toUpperCase())) {
+            return res.status(400).json({ success: false, message: "Invalid subscription" })
         }
+        const subsPrice = SUBSCRIPTION_TYPE[req.body.subscription.toUpperCase()]
+
+        const checkSubscription = await supabaseAdmin.from("userSubscriptionDetails").select('*').eq('user_id', req.user).eq('status', 'ACTIVE')
+
+        if (checkSubscription.data && checkSubscription.data.length > 0) {
+            return res.status(400).json({ success: false, message: "Already subscribed" })
+        }
+
         const createOrder = await paymentService.createOrder({ amount: subsPrice, subscription: req.body.subscription, user_id: req.user })
-        const { _, error } = await supabaseAdmin.from("userSubscritionsDetails").insert({
+        const { _, error } = await supabaseAdmin.from("userPaymentDetails").insert({
             user_id: req.user,
             plan: req.body.subscription,
             subscription_status: "PENDING"
@@ -33,20 +37,49 @@ const createOrderController = async (req, res) => {
 
 const verifyPaymentController = async (req, res) => {
     try {
-        const body = req.body;
-        const verify = await paymentService.verifyPayment(body)
+        const { order_id, payment_id, signature } = req.body;
+
+        if (!order_id || !payment_id || !signature) {
+            return res.status(400).json({ success: false, message: "Invalid request" })
+        }
+
+        const verify = await paymentService.verifyPayment({ order_id, payment_id, signature })
+
         if (!verify) {
+            const { _, error } = await supabaseAdmin.from('userPaymentDetails').update({ subscription_status: "FAILED" }).eq('order_id', order_id)
+            if (error) {
+                console.log("Error in updating payment status")
+            }
             return res.status(400).json({
                 success: false,
                 message: 'Payment verification failed'
             })
         }
 
-        const { _, error } = await supabaseAdmin.from('userSubscritionsDetails').update({ subscription_status: "CONFIRM" }).eq('user_id', req.user);
+        const { data, error } = await supabaseAdmin.from('userPaymentDetails').select('*').eq('order_id', order_id).eq('user_id', req.user).single();
         if (error) {
-            //todo -> DB not updated yet
-            res.status(500).json({ success: true, message: "Money debited" })
+            return res.status(500).json({ success: false, message: "Internal Server Error" })
         }
+
+        if (!data || data.length == 0) {
+            return res.status(404).json({
+                success: false,
+                message: "Order not found"
+            });
+        }
+        if (data.subscription_status === "CONFIRM") {
+            return res.status(200).json({
+                success: true,
+                message: "Already confirmed"
+            });
+        }
+
+        await supabaseAdmin.from('userPaymentDetails').update({ subscription_status: "CONFIRM", payment_id: payment_id }).eq('order_id', order_id).eq('user_id', req.user);
+        const { _, error: subError } = await supabaseAdmin.from('userSubscriptionDetails').update({ subscription_type: "QUESTION", subscription_id: payment_id, status: "ACTIVE" }).eq('user_id', req.user);
+        if (subError) {
+            return res.status(500).json({ success: false, message: "Internal Server Error" })
+        }
+
         return res.status(200).json({ success: true, message: "Subscription Successful" })
     } catch (e) {
         console.log(e)
@@ -54,4 +87,25 @@ const verifyPaymentController = async (req, res) => {
     }
 }
 
-export { createOrderController, verifyPaymentController }
+const createPlanController = async (req, res) => {
+    try {
+        if (!req.body || !req.body.subscription) {
+            return res.status(400).json({ success: false, message: "Subscription is required" })
+        }
+        if (!Object.keys(SUBSCRIPTION_TYPE).includes(req.body.subscription.toUpperCase())) {
+            return res.status(400).json({ success: false, message: "Invalid subscription" })
+        }
+        const checkSubscription = await supabaseAdmin.from("userSubscriptionDetails").select('*').eq('user_id', req.user).eq('status', 'ACTIVE')
+
+        if (checkSubscription.data && checkSubscription.data.length > 0) {
+            return res.status(400).json({ success: false, message: "Already subscribed" })
+        }
+        const createPlan = await paymentService.createProPlanSubscription({ user_id: req.user });
+        res.status(201).json(createPlan)
+    } catch (e) {
+        console.log(e)
+        return res.status(500).json({ success: false, message: "Internal Server Error" })
+    }
+}
+
+export { createOrderController, verifyPaymentController, createPlanController }

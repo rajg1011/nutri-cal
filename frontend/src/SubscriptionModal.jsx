@@ -1,6 +1,7 @@
 import { X, Check, Zap, MessageSquare } from 'lucide-react';
 import './css/SubscriptionModal.css';
 import useScrollLock from './hooks/useScrollLock';
+import { SUBSCRIPTION_TYPE } from '../utils/constant';
 
 const SubscriptionModal = ({ onClose, onUpgrade }) => {
   useScrollLock();
@@ -21,7 +22,7 @@ const SubscriptionModal = ({ onClose, onUpgrade }) => {
 
         <div className="plans-list">
           {/* Pro Plan */}
-          <div className="plan-card pro" onClick={() => onUpgrade('pro')}>
+          <div className="plan-card pro" onClick={() => onUpgrade(Object.keys(SUBSCRIPTION_TYPE)?.[0])}>
             <div className="plan-header">
               <div className="plan-info">
                 <div className="plan-icon green">
@@ -51,7 +52,7 @@ const SubscriptionModal = ({ onClose, onUpgrade }) => {
           </div>
 
           {/* Question Pack */}
-          <div className="plan-card pack" onClick={() => onUpgrade('question')}>
+          <div className="plan-card pack" onClick={() => onUpgrade(Object.keys(SUBSCRIPTION_TYPE)?.[1])}>
             <div className="plan-header">
               <div className="plan-info">
                 <div className="plan-icon blue">

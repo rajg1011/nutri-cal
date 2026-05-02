@@ -10,6 +10,7 @@ import supabase from '../core/supabaseClient';
 import { usePayment } from './hooks/usePayment';
 import LoadingScreen from './LoadingScreen';
 import { toast } from 'react-toastify';
+import { ACTIVE_AI, SUBSCRIPTION_TYPE } from '../utils/constant';
 
 const MEAL_ICONS = {
   Breakfast: '🌅',
@@ -179,8 +180,8 @@ const Dashboard = ({ user, session }) => {
     setIsCheckingSub(true);
     try {
       const { data, error } = await supabase
-        .from('userSubscritionsDetails')
-        .select('plan,subscription_status')
+        .from('userSubscriptionDetails')
+        .select('subscription_type,status')
         .eq('user_id', user.id);
 
       if (error && error.code !== 'PGRST116') {
@@ -189,8 +190,8 @@ const Dashboard = ({ user, session }) => {
         return;
       }
 
-      const plan = data[0]?.plan?.toLowerCase() || 'free';
-      if ((plan === 'pro' || plan === 'question') && data[0]?.subscription_status?.toLowerCase() === 'confirm') {
+      const plan = data[0]?.plan?.toUpperCase() || 'FREE';
+      if ((Object.keys(SUBSCRIPTION_TYPE).includes(plan)) && data[0]?.status?.toUpperCase() === ACTIVE_AI) {
         setShowAIChat(true);
       } else {
         setShowSubscriptionModal(true);

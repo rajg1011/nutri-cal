@@ -1,5 +1,5 @@
 import aiServiceResponse from "../../ai/aiService.js";
-import { Constants } from "../../constant.js";
+import { Constants, SUBSCRIPTION_TYPE } from "../../constant.js";
 
 
 const aiChatbotController = async (req, res) => {
@@ -19,7 +19,7 @@ const aiChatbotController = async (req, res) => {
       return res.status(400).json({ success: false, message: "No subscription found" })
     }
 
-    if ((data[0]?.plan?.toLowerCase() !== "pro" && data[0]?.tokens_remaining <= 0) || (data[0]?.plan?.toLowerCase() === "question_limit" && data[0]?.questions_asked >= Constants?.QUESTION_AKSED)) {
+    if ((data[0]?.plan?.toLowerCase() !== Object.keys(SUBSCRIPTION_TYPE)?.[0] && data[0]?.tokens_remaining <= 0) || (data[0]?.plan?.toLowerCase() === Object.keys(SUBSCRIPTION_TYPE)?.[1] && data[0]?.questions_asked >= Constants?.QUESTION_AKSED)) {
       return res.status(400).json({ success: false, message: "Limit ends" })
     }
 

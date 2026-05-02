@@ -4,6 +4,9 @@ const supabase = createClient(process.env.SUPABASE_PROJECT_URL, process.env.SUPA
 
 const AuthMiddleWare = async (req, res, next) => {
     try {
+        if (req.path === "/webhook") {
+            return next(); 
+        }
         const authHeader = req.headers.authorization;
         if (!authHeader || !authHeader.startsWith("Bearer ")) {
             return res.status(401).json({ message: "Unauthorized" })
