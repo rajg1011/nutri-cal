@@ -10,6 +10,7 @@ import { checkDuplicateEvent } from "./middlewares/webhook.middleware.js";
 
 const app = express();
 app.use(express.json());
+express.raw()
 app.use(cors());
 app.use(AuthMiddleWare)
 
