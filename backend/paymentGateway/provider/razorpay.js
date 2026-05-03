@@ -44,8 +44,6 @@ export const razorPay = (() => {
                     "total_count": 100,
                     "quantity": 1,
                     "customer_notify": 1,
-                    "start_at": Math.floor(Date.now() / 1000),
-                    "expire_by": Math.floor(Date.now() / 1000) + (15 * 60),
                     "notes": {
                         "user_id": user_id,
                         "subscription": "PRO"
