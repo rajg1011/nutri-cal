@@ -59,7 +59,6 @@ export const usePayment = ({ user, session }) => {
                 return;
             }
 
-            const { order_id, amount } = orderData;
             const razorPayOptions = {
                 key: import.meta.env.VITE_RAZORPAY_API_KEY,
                 currency: "INR",
@@ -83,10 +82,10 @@ export const usePayment = ({ user, session }) => {
                 }
             }
             if (subscription === Object.keys(SUBSCRIPTION_TYPE)?.[1]) {
-                razorPayOptions.order_id = order_id,
-                amount
+                razorPayOptions.order_id = orderData?.order_id;
+                razorPayOptions.amount= orderData?.amount;
             } else {
-                razorPayOptions.subscription_id = import.meta.env.VITE_RAZORPAY_PLAN_ID_199
+                razorPayOptions.subscription_id = orderData?.subscription_id
             }
 
             const razorpayInstance = new Razorpay(razorPayOptions);
