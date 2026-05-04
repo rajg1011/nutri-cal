@@ -190,7 +190,7 @@ const Dashboard = ({ user, session }) => {
         return;
       }
 
-      const plan = data[0]?.plan?.toUpperCase() || 'FREE';
+      const plan = data[0]?.subscription_type?.toUpperCase() || 'FREE';
       if ((Object.keys(SUBSCRIPTION_TYPE).includes(plan)) && data[0]?.status?.toUpperCase() === ACTIVE_AI) {
         setShowAIChat(true);
       } else {

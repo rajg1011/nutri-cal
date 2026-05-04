@@ -19,15 +19,29 @@ const createOrderController = async (req, res) => {
             return res.status(400).json({ success: false, message: "Already subscribed" })
         }
 
-        const createOrder = await paymentService.createOrder({ amount: subsPrice, subscription: req.body.subscription, user_id: req.user })
-        const { _, error } = await supabaseAdmin.from("userPaymentDetails").insert({
+        const { data, error } = await supabaseAdmin.from("userPaymentDetails").insert({
             user_id: req.user,
             plan: req.body.subscription,
             subscription_status: "PENDING"
-        })
+        }).select('*')
+
         if (error) {
-            throw error;
+            throw new Error("Error in inserting order");
         }
+
+        const createOrder = await paymentService.createOrder({ amount: subsPrice, subscription: req.body.subscription, user_id: req.user })
+
+        const { __, error: err } = await supabaseAdmin
+            .from("userPaymentDetails")
+            .update({
+                order_id: createOrder?.order_id
+            })
+            .eq("id", data[0].id);
+
+        if (err) {
+            throw new Error("Error in updating order");
+        }
+
         res.status(201).json(createOrder)
     } catch (e) {
         console.log(e)
@@ -75,7 +89,7 @@ const verifyPaymentController = async (req, res) => {
         }
 
         await supabaseAdmin.from('userPaymentDetails').update({ subscription_status: "CONFIRM", payment_id: payment_id }).eq('order_id', order_id).eq('user_id', req.user);
-        const { _, error: subError } = await supabaseAdmin.from('userSubscriptionDetails').update({ subscription_type: "QUESTION", subscription_id: payment_id, status: "ACTIVE" }).eq('user_id', req.user);
+        const { _, error: subError } = await supabaseAdmin.from('userSubscriptionDetails').update({ subscription_type: Object.keys(SUBSCRIPTION_TYPE)?.[1], subscription_id: payment_id, status: "ACTIVE" }).eq('user_id', req.user);
         if (subError) {
             return res.status(500).json({ success: false, message: "Internal Server Error" })
         }

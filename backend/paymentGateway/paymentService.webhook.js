@@ -21,7 +21,7 @@ const handlePaymentAuthorizedLogic = async ({ user_id, payment_id, subscription,
                     onConflict: 'user_id'
                 });
             if (subError) {
-                throw subError
+                throw new Error("Error at handlePayementAuthorizedLogic's update query")
             }
         }
         return true
@@ -37,7 +37,7 @@ const handleSubscriptionStart = async ({ user_id, plan_id, subscription }) => {
         if (error || !data || data.length === 0) {
             const { _, error: subError } = await supabaseAdmin.from('userSubscriptionDetails').update({ subscription_type: subscription, subscription_id: plan_id, status: "ACTIVE" }).eq('user_id', user_id);
             if (subError) {
-                throw subError
+                throw new Error("Error at handleSubscriptionStart's update query")
             }
         }
         return true
@@ -55,7 +55,7 @@ const handleSubscriptionEnd = async ({ user_id, plan_id, subscription }) => {
         if (error || !data || data.length === 0) {
             const { _, error: subError } = await supabaseAdmin.from('userSubscriptionDetails').update({ subscription_type: subscription, subscription_id: plan_id, status: "STOP" }).eq('user_id', user_id);
             if (subError) {
-                throw subError
+                throw new Error("Error at handleSubscriptionEnd's update query")
             }
         }
         return true
