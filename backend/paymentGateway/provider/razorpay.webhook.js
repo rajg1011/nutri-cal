@@ -1,5 +1,6 @@
-import { handlePaymentAuthorizedLogic } from '../../modules/payment/payment.webhook.js';
 import Razorpay from "razorpay";
+import { handlePaymentAuthorizedLogic, handleSubscriptionEnd, handleSubscriptionStart } from "../paymentService.webhook.js";
+import { SUBSCRIPTION_TYPE } from "../../constant.js";
 
 const validWebhook = async (req) => {
     const signature = req.headers["x-razorpay-signature"];
@@ -11,7 +12,7 @@ const validWebhook = async (req) => {
     return isValid
 }
 
-const getEventid = () => {
+const getEventid = (req) => {
     return req.headers["x-razorpay-event-id"]
 }
 
@@ -32,12 +33,12 @@ const handleWebhookLogic = async (req) => {
         case "subscription.authenticated":
         case "subscription.charged":
             const { user_id: user } = payload.subscription.entity.notes;
-            await handleSubscriptionStart({ subscription: "PRO", user_id: user, plan_id: process.env.RAZORPAY_PLAN_ID_199 });
+            await handleSubscriptionStart({ subscription: Object.keys(SUBSCRIPTION_TYPE)?.[0], user_id: user, plan_id: process.env.RAZORPAY_PLAN_ID_199 });
             break;
         case "subscription.halted":
         case "subscription.cancelled":
             const { user_id: userCancel } = payload.subscription.entity.notes;
-            await handleSubscriptionEnd({ subscription: "PRO", user_id: userCancel, plan_id: process.env.RAZORPAY_PLAN_ID_199 });
+            await handleSubscriptionEnd({ subscription: Object.keys(SUBSCRIPTION_TYPE)?.[0], user_id: userCancel, plan_id: process.env.RAZORPAY_PLAN_ID_199 });
             break;
         default:
             console.log(`Unhandled event: ${event}`);
@@ -46,7 +47,7 @@ const handleWebhookLogic = async (req) => {
 }
 
 
-export const razorPay = (async () => {
+export const razorPayWebhook = (async () => {
     return {
         validateWebhookSignature: async (req) => {
             return await validWebhook(req)
