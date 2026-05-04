@@ -27,7 +27,7 @@ const handleWebhookLogic = async (req) => {
     switch (event) {
         case "payment.authorized":
             const { id: payment_id, order_id, } = payload.payment.entity;
-            const { user_id, subscription } = payload.payement.entity.notes
+            const { user_id, subscription } = payload.payment.entity.notes
             await handlePaymentAuthorizedLogic({ user_id, payment_id, subscription, order_id });
             break;
         case "subscription.authenticated":
