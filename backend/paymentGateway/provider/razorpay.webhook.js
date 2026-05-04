@@ -12,7 +12,7 @@ const validWebhook = async (req) => {
     return isValid
 }
 
-const getEventid = (req) => {
+const getEventId = (req) => {
     return req.headers["x-razorpay-event-id"]
 }
 
@@ -47,19 +47,17 @@ const handleWebhookLogic = async (req) => {
 }
 
 
-export const razorPayWebhook = (async () => {
-    return {
-        validateWebhookSignature: async (req) => {
-            return await validWebhook(req)
-        },
-        eventParser: (req) => {
-            return eventParser(req)
-        },
-        getEventid: () => {
-            return getEventid(req)
-        },
-        webhookHandler: async (req) => {
-            return await handleWebhookLogic(req)
-        }
+export const razorPayWebhook = {
+    validateWebhookSignature: async (req) => {
+        return await validWebhook(req)
+    },
+    eventParser: (req) => {
+        return eventParser(req)
+    },
+    getEventId: (req) => {
+        return getEventId(req)
+    },
+    webhookHandler: async (req) => {
+        return await handleWebhookLogic(req)
     }
-})()
+};
