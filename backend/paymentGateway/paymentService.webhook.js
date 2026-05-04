@@ -1,3 +1,4 @@
+import supabaseAdmin from "../utils/supabaseAdmin.js";
 import { razorPayWebhook } from "./provider/razorpay.webhook.js";
 
 const webhookProvider = {
@@ -9,14 +10,24 @@ const handlePaymentAuthorizedLogic = async ({ user_id, payment_id, subscription,
         const { data, error } = await supabaseAdmin.from("userSubscriptionDetails").select('*').eq('user_id', user_id).eq('status', 'ACTIVE')
         if (error || !data || data.length === 0) {
             await supabaseAdmin.from('userPaymentDetails').update({ subscription_status: "CONFIRM", payment_id }).eq('order_id', order_id).eq('user_id', user_id);
-            const { _, error: subError } = await supabaseAdmin.from('userSubscriptionDetails').update({ subscription_type: subscription, subscription_id: payment_id, status: "ACTIVE" }).eq('user_id', user_id);
+            const { _, error: subError } = await supabaseAdmin
+                .from('userSubscriptionDetails')
+                .upsert({
+                    user_id,
+                    subscription_type: subscription,
+                    subscription_id: payment_id,
+                    status: "ACTIVE"
+                }, {
+                    onConflict: 'user_id'
+                });
             if (subError) {
-                res.status(500).json({ success: false });
+                throw subError
             }
         }
-        return res.send()
+        return true
     } catch (error) {
         console.error("Error in webhook:", error);
+        return null
     }
 };
 
@@ -26,14 +37,15 @@ const handleSubscriptionStart = async ({ user_id, plan_id, subscription }) => {
         if (error || !data || data.length === 0) {
             const { _, error: subError } = await supabaseAdmin.from('userSubscriptionDetails').update({ subscription_type: subscription, subscription_id: plan_id, status: "ACTIVE" }).eq('user_id', user_id);
             if (subError) {
-                res.status(500).json({ success: false });
+                throw subError
             }
         }
-        return res.send()
+        return true
 
     }
     catch (error) {
         console.error("Error in webhook:", error);
+        return null
     }
 }
 
@@ -43,14 +55,15 @@ const handleSubscriptionEnd = async ({ user_id, plan_id, subscription }) => {
         if (error || !data || data.length === 0) {
             const { _, error: subError } = await supabaseAdmin.from('userSubscriptionDetails').update({ subscription_type: subscription, subscription_id: plan_id, status: "STOP" }).eq('user_id', user_id);
             if (subError) {
-                res.status(500).json({ success: false });
+                throw subError
             }
         }
-        return res.send()
+        return true
 
     }
     catch (error) {
         console.error("Error in webhook:", error);
+        return null
     }
 }
 
