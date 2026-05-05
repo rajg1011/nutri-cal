@@ -9,12 +9,12 @@ const checkDuplicateEvent = async (req, res, next) => {
         await supabaseAdmin.from('webhooksDeatails').insert({
             webhook_id: eventId
         })
-        next()
+        return next()
     }
     if (error) {
-        res.status(500).json({ success: false });
+        return res.status(500).json({ success: false });
     }
-    return res.send()
+    return res.status(200).send({ success: true, message: "Event already processed" })
 };
 
 export { checkDuplicateEvent }

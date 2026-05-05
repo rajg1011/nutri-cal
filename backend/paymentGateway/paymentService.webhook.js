@@ -7,6 +7,9 @@ const webhookProvider = {
 
 const handlePaymentAuthorizedLogic = async ({ user_id, payment_id, subscription, order_id }) => {
     try {
+        if (!user_id || !payment_id || !subscription || !order_id) {
+            throw new Error("Invalid arguments at handlePaymentAuthorizedLogic")
+        }
         const { data, error } = await supabaseAdmin.from("userSubscriptionDetails").select('*').eq('user_id', user_id).eq('status', 'ACTIVE')
         if (error || !data || data.length === 0) {
             await supabaseAdmin.from('userPaymentDetails').update({ subscription_status: "CONFIRM", payment_id }).eq('order_id', order_id).eq('user_id', user_id);
@@ -33,6 +36,9 @@ const handlePaymentAuthorizedLogic = async ({ user_id, payment_id, subscription,
 
 const handleSubscriptionStart = async ({ user_id, plan_id, subscription }) => {
     try {
+        if (!user_id || !plan_id || !subscription) {
+            throw new Error("Invalid arguments at handleSubscriptionStart")
+        }
         const { data, error } = await supabaseAdmin.from("userSubscriptionDetails").select('*').eq('user_id', user_id).eq('status', 'ACTIVE')
         if (error || !data || data.length === 0) {
             const { _, error: subError } = await supabaseAdmin.from('userSubscriptionDetails')
@@ -52,6 +58,9 @@ const handleSubscriptionStart = async ({ user_id, plan_id, subscription }) => {
 
 const handleSubscriptionEnd = async ({ user_id, plan_id, subscription }) => {
     try {
+        if (!user_id || !plan_id || !subscription) {
+            throw new Error("Invalid arguments at handleSubscriptionEnd")
+        }
         const { data, error } = await supabaseAdmin.from("userSubscriptionDetails").select('*').eq('user_id', user_id).or('status.eq.STOP,status.is.null,status.eq.');
         if (error || !data || data.length === 0) {
             const { _, error: subError } = await supabaseAdmin.from('userSubscriptionDetails').update({ subscription_type: subscription, subscription_id: plan_id, status: "STOP" }).eq('user_id', user_id);
