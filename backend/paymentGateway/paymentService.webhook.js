@@ -35,7 +35,8 @@ const handleSubscriptionStart = async ({ user_id, plan_id, subscription }) => {
     try {
         const { data, error } = await supabaseAdmin.from("userSubscriptionDetails").select('*').eq('user_id', user_id).eq('status', 'ACTIVE')
         if (error || !data || data.length === 0) {
-            const { _, error: subError } = await supabaseAdmin.from('userSubscriptionDetails').update({ subscription_type: subscription, subscription_id: plan_id, status: "ACTIVE" }).eq('user_id', user_id);
+            const { _, error: subError } = await supabaseAdmin.from('userSubscriptionDetails')
+                .upsert({ subscription_type: subscription, subscription_id: plan_id, status: "ACTIVE", user_id }, { onConflict: 'user_id' })
             if (subError) {
                 throw new Error("Error at handleSubscriptionStart's update query")
             }
