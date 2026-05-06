@@ -9,7 +9,11 @@ import { webhookRouter } from "./webhooks/payment/payment.webhook.route.js";
 
 const app = express();
 app.use(express.json());
-app.use(cors());
+app.use(cors({
+    origin: 'https://nutri-cal.pages.dev',
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    credentials: true
+}));
 
 app.use("/api/chatbot", AuthMiddleWare, aiChatbotRoutes);
 app.use("/payment", AuthMiddleWare, paymentRoutes)
