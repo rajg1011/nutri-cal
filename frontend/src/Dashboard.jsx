@@ -179,7 +179,7 @@ const Dashboard = ({ user, session }) => {
     if (isCheckingSub) return;
     setIsCheckingSub(true);
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/payment/check-subscription`, {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/payment/check-subscription`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${session?.access_token}`,
