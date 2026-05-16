@@ -1,5 +1,5 @@
 import Razorpay from "razorpay";
-import { handlePaymentAuthorizedLogic, handleSubscriptionEnd, handleSubscriptionStart } from "../paymentService.webhook.js";
+import { handlePaymentAuthorizedLogic, handleSubscriptionStart } from "../paymentService.webhook.js";
 import { SUBSCRIPTION_TYPE } from "../../constant.js";
 
 const validWebhook = async (req) => {
