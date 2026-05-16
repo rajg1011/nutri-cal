@@ -179,19 +179,17 @@ const Dashboard = ({ user, session }) => {
     if (isCheckingSub) return;
     setIsCheckingSub(true);
     try {
-      const { data, error } = await supabase
-        .from('userSubscriptionDetails')
-        .select('subscription_type,status')
-        .eq('user_id', user.id);
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/payment/check-subscription`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${session?.access_token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      const result = await response.json();
 
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error fetching subscription:', error);
-        setShowSubscriptionModal(true);
-        return;
-      }
-
-      const plan = data[0]?.subscription_type?.toUpperCase() || 'FREE';
-      if ((Object.keys(SUBSCRIPTION_TYPE).includes(plan)) && data[0]?.status?.toUpperCase() === ACTIVE_AI) {
+      if (result.success && result.isAvailable) {
         setShowAIChat(true);
       } else {
         setShowSubscriptionModal(true);

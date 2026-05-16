@@ -33,10 +33,6 @@ const handleWebhookLogic = async (req) => {
         case "subscription.charged":
             const { user_id: user } = payload.subscription.entity.notes;
             return await handleSubscriptionStart({ subscription: Object.keys(SUBSCRIPTION_TYPE)?.[0], user_id: user, plan_id: process.env.RAZORPAY_PLAN_ID_199 });
-        case "subscription.halted":
-        case "subscription.cancelled":
-            const { user_id: userCancel } = payload.subscription.entity.notes;
-            return await handleSubscriptionEnd({ subscription: Object.keys(SUBSCRIPTION_TYPE)?.[0], user_id: userCancel, plan_id: process.env.RAZORPAY_PLAN_ID_199 });
         default:
             console.log(`Unhandled event: ${event}`);
             return null

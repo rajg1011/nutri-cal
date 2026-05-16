@@ -1,5 +1,6 @@
-import { SUBSCRIPTION_TYPE } from "../../constant.js"
+import { SUBSCRIPTION_TYPE, Constants } from "../../constant.js"
 import paymentService from "../../paymentGateway/paymentService.js"
+import isSubscriptionActive from "../../utils/subscriptionActive.js"
 import supabaseAdmin from "../../utils/supabaseAdmin.js"
 
 
@@ -15,7 +16,7 @@ const createOrderController = async (req, res) => {
 
         const checkSubscription = await supabaseAdmin.from("userSubscriptionDetails").select('*').eq('user_id', req.user).eq('status', 'ACTIVE')
 
-        if (checkSubscription.data && checkSubscription.data.length > 0) {
+        if (isSubscriptionActive(checkSubscription.data)) {
             return res.status(400).json({ success: false, message: "Already subscribed" })
         }
 
@@ -89,9 +90,32 @@ const verifyPaymentController = async (req, res) => {
         }
 
         await supabaseAdmin.from('userPaymentDetails').update({ subscription_status: "CONFIRM", payment_id: payment_id }).eq('order_id', order_id).eq('user_id', req.user);
-        const { _, error: subError } = await supabaseAdmin.from('userSubscriptionDetails').update({ subscription_type: Object.keys(SUBSCRIPTION_TYPE)?.[1], subscription_id: payment_id, status: "ACTIVE" }).eq('user_id', req.user);
-        if (subError) {
-            return res.status(500).json({ success: false, message: "Internal Server Error" })
+
+        const checkSubscription = await supabaseAdmin.from("userSubscriptionDetails").select('*').eq('user_id', req.user).eq('status', 'ACTIVE');
+
+        if (!isSubscriptionActive(checkSubscription.data)) {
+            const purchasedPlan = data.plan.toUpperCase();
+            let updatePayload = {
+                user_id: req.user,
+                subscription_type: purchasedPlan,
+                subscription_id: payment_id,
+                status: "ACTIVE"
+            };
+
+            if (purchasedPlan === 'QUESTION') {
+                updatePayload.question_asked = Constants.QUESTION_AKSED;
+            } else if (purchasedPlan === 'PRO') {
+                const futureDate = new Date();
+                futureDate.setMonth(futureDate.getMonth() + 1);
+                updatePayload.end_date = futureDate.toISOString();
+            }
+
+            const { _, error: subError } = await supabaseAdmin.from('userSubscriptionDetails')
+                .upsert(updatePayload, { onConflict: 'user_id' });
+
+            if (subError) {
+                return res.status(500).json({ success: false, message: "Internal Server Error" })
+            }
         }
 
         return res.status(200).json({ success: true, message: "Subscription Successful" })
@@ -111,7 +135,7 @@ const createPlanController = async (req, res) => {
         }
         const checkSubscription = await supabaseAdmin.from("userSubscriptionDetails").select('*').eq('user_id', req.user).eq('status', 'ACTIVE')
 
-        if (checkSubscription.data && checkSubscription.data.length > 0) {
+        if (isSubscriptionActive(checkSubscription.data)) {
             return res.status(400).json({ success: false, message: "Already subscribed" })
         }
         const createPlan = await paymentService.createProPlanSubscription({ user_id: req.user });
@@ -122,4 +146,26 @@ const createPlanController = async (req, res) => {
     }
 }
 
-export { createOrderController, verifyPaymentController, createPlanController }
+const checkSubscriptionController = async (req, res) => {
+    try {
+        const { data, error } = await supabaseAdmin
+            .from("userSubscriptionDetails")
+            .select('*')
+            .eq('user_id', req.user)
+            .eq('status', 'ACTIVE');
+
+        if (error) {
+            console.log("Error in checkSubscriptionController:", error);
+            return res.status(500).json({ success: false, message: "Internal Server Error" });
+        }
+
+        const isAvailable = isSubscriptionActive(data);
+
+        return res.status(200).json({ success: true, isAvailable });
+    } catch (e) {
+        console.log(e);
+        return res.status(500).json({ success: false, message: "Internal Server Error" });
+    }
+}
+
+export { createOrderController, verifyPaymentController, createPlanController, checkSubscriptionController }
