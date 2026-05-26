@@ -5,6 +5,7 @@ import { aiChatbotRoutes } from "./modules/aiChatbot/aiChatbot.routes.js";
 import AuthMiddleWare from "./middlewares/auth.middleware.js";
 import { paymentRoutes } from "./modules/payment/payment.routes.js";
 import { webhookRouter } from "./webhooks/payment/payment.webhook.route.js";
+import { AISubscriberMiddleware } from "./middlewares/aiSubscriber.middleware.js";
 
 
 const app = express();
@@ -15,7 +16,7 @@ app.use(cors({
     credentials: true
 }));
 
-app.use("/api/chatbot", AuthMiddleWare, aiChatbotRoutes);
+app.use("/api/chatbot", AuthMiddleWare, AISubscriberMiddleware, aiChatbotRoutes);
 app.use("/payment", AuthMiddleWare, paymentRoutes)
 app.use("/webhook", express.raw({ type: '*/*' }), webhookRouter)
 

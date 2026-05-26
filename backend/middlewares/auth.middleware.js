@@ -25,10 +25,10 @@ const AuthMiddleWare = async (req, res, next) => {
             }
         );
         req.user = data.user.id
-        next();
+        return next();
     } catch (e) {
         console.log(e)
-        res.status(500).json({ message: "Internal Server Error" })
+        return res.status(500).json({ message: "Internal Server Error" })
     }
 }
 
