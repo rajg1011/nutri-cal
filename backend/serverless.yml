@@ -1,4 +1,5 @@
 service: express-lambda
+useDotenv: true
 
 provider:
   name: aws
