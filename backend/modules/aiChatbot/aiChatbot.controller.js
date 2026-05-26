@@ -1,4 +1,4 @@
-import aiServiceResponse from "../../ai/aiService.js";
+import aiServiceResponse from "../../services/ai/aiService.js";
 import { Constants, SUBSCRIPTION_TYPE } from "../../constant.js";
 
 

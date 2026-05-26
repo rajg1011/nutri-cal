@@ -1,6 +1,6 @@
-import isSubscriptionActive from "../utils/subscriptionActive.js";
-import { Constants } from "../constant.js";
-import supabaseAdmin from "../utils/supabaseAdmin.js";
+import isSubscriptionActive from "../../utils/subscriptionActive.js";
+import { Constants } from "../../constant.js";
+import supabaseAdmin from "../../utils/supabaseAdmin.js";
 import { razorPayWebhook } from "./provider/razorpay.webhook.js";
 
 const webhookProvider = {

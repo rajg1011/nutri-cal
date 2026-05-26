@@ -1,5 +1,5 @@
 import { SUBSCRIPTION_TYPE, Constants } from "../../constant.js"
-import paymentService from "../../paymentGateway/paymentService.js"
+import paymentService from "../../services/paymentGateway/paymentService.js"
 import isSubscriptionActive from "../../utils/subscriptionActive.js"
 import supabaseAdmin from "../../utils/supabaseAdmin.js"
 

@@ -1,6 +1,6 @@
 import Razorpay from "razorpay";
 import { handlePaymentAuthorizedLogic, handleSubscriptionStart } from "../paymentService.webhook.js";
-import { SUBSCRIPTION_TYPE } from "../../constant.js";
+import { SUBSCRIPTION_TYPE } from "../../../constant.js";
 
 const validWebhook = async (req) => {
     const signature = req.headers["x-razorpay-signature"];

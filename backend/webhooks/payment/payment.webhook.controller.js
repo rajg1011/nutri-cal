@@ -1,4 +1,4 @@
-import paymentServiceWebhook from "../../paymentGateway/paymentService.webhook.js"
+import paymentServiceWebhook from "../../services/paymentGateway/paymentService.webhook.js"
 
 export const paymentServiceWebhookController = async (req, res) => {
     try {
