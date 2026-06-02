@@ -36,8 +36,7 @@ const AIChatbot = ({ user, session, onClose }) => {
     setIsTyping(true);
 
     try {
-      // Calling the local backend API
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/chatbot/chat`, {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/chatbot/chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

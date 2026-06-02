@@ -9,3 +9,10 @@ export const SUBSCRIPTION_TYPE = {
 
 export const ACTIVE_AI= 'ACTIVE'
 export const STOP_AI= 'STOP'
+
+export const validMealTypes = [
+    "breakfast",
+    "lunch",
+    "dinner",
+    "snack"
+];

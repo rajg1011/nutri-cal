@@ -1,4 +1,4 @@
-import isSubscriptionActive from "../utils/subscriptionActive"
+import isSubscriptionActive from "../utils/subscriptionActive.js"
 
 const AISubscriberMiddleware = async (req, res, next) => {
     try {
