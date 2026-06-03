@@ -27,6 +27,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
 
       - name: Install dependencies
         run: npm ci
@@ -39,3 +41,13 @@ jobs:
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ap-south-1
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          SUPABASE_PROJECT_URL: ${{ secrets.SUPABASE_PROJECT_URL }}
+          SUPABASE_SUPER_ADMIN: ${{ secrets.SUPABASE_SUPER_ADMIN }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          RAZORPAY_API_KEY: ${{ secrets.RAZORPAY_API_KEY }}
+          RAZORPAY_SECRET: ${{ secrets.RAZORPAY_SECRET }}
+          RAZORPAY_PLAN_ID_199: ${{ secrets.RAZORPAY_PLAN_ID_199 }}
+          CRYPTO_SECRET: ${{ secrets.CRYPTO_SECRET }}
+          RAZORPAY_WEBHOOK_SECRET: ${{ secrets.RAZORPAY_WEBHOOK_SECRET }}
