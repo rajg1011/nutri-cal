@@ -5,6 +5,8 @@ import supabase from '../core/supabaseClient';
 import Login from './Login';
 import Dashboard from './Dashboard';
 import LoadingScreen from './LoadingScreen';
+import ProfileOnboarding from './ProfileOnboarding';
+import './css/App.css';
 
 
 const ProtectedRoute = ({ user, loading, children }) => {
@@ -16,6 +18,73 @@ const ProtectedRoute = ({ user, loading, children }) => {
 const PublicRoute = ({ user, loading, children }) => {
   if (loading) return <LoadingScreen />;
   return !user ? children : <Navigate to="/dashboard" replace />;
+};
+
+const ProfileGate = ({ user, children }) => {
+  const [isCheckingProfile, setIsCheckingProfile] = useState(true);
+  const [hasProfile, setHasProfile] = useState(false);
+  const [profileError, setProfileError] = useState('');
+  const [profileCheckKey, setProfileCheckKey] = useState(0);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const checkProfile = async () => {
+      if (!user?.id) return;
+
+      setIsCheckingProfile(true);
+      setProfileError('');
+
+      const { data, error } = await supabase
+        .from('userProfile')
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (!isMounted) return;
+
+      if (error) {
+        console.error('Error checking user profile:', error);
+        setProfileError('Could not check your profile. Please retry.');
+        setHasProfile(false);
+      } else {
+        setHasProfile(Boolean(data));
+      }
+
+      setIsCheckingProfile(false);
+    };
+
+    checkProfile();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user?.id, profileCheckKey]);
+
+  if (isCheckingProfile) return <LoadingScreen />;
+
+  if (profileError) {
+    return (
+      <div className="app-container fade-in">
+        <div className="daily-target-card">
+          <div className="card-label">PROFILE</div>
+          <p style={{ color: 'var(--text-secondary)', marginBottom: 16 }}>{profileError}</p>
+          <button className="save-btn" onClick={() => setProfileCheckKey(key => key + 1)}>Retry</button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!hasProfile) {
+    return (
+      <>
+        {children}
+        <ProfileOnboarding user={user} onComplete={() => setHasProfile(true)} />
+      </>
+    );
+  }
+
+  return children;
 };
 
 function App() {
@@ -75,7 +144,9 @@ function App() {
         path="/dashboard"
         element={
           <ProtectedRoute user={user} loading={loading}>
-            <Dashboard user={user} session={session} />
+            <ProfileGate user={user}>
+              <Dashboard user={user} session={session} />
+            </ProfileGate>
           </ProtectedRoute>
         }
       />
