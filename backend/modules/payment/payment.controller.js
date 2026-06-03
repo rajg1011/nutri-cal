@@ -1,7 +1,7 @@
 import { SUBSCRIPTION_TYPE, Constants } from "../../constant.js"
 import paymentService from "../../services/paymentGateway/paymentService.js"
 import isSubscriptionActive from "../../utils/subscriptionActive.js"
-import supabaseAdmin from "../../utils/supabaseAdmin.js"
+import supabaseAdmin from "../../config/supabaseAdmin.js"
 
 
 const createOrderController = async (req, res) => {
