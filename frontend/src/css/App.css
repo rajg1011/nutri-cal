@@ -731,6 +731,15 @@
   background: rgba(255, 255, 255, 0.22);
 }
 
+@media (min-width: 768px) {
+  .install-banner {
+    max-width: 480px;
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+  }
+}
+
 /* AI Sparkle Loading */
 .loading-sparkle {
   animation: sparkle-rotate 1.5s linear infinite;
