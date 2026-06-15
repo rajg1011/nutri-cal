@@ -31,11 +31,11 @@ const handleWebhookLogic = async (req) => {
             return await handlePaymentAuthorizedLogic({ user_id, payment_id, subscription, order_id });
         case "subscription.authenticated":
         case "subscription.charged":
-            const { user_id: user } = payload.subscription.entity.notes;
-            return await handleSubscriptionStart({ subscription: Object.keys(SUBSCRIPTION_TYPE)?.[0], user_id: user, plan_id: process.env.RAZORPAY_PLAN_ID_199 });
+            const { user_id: user, subscription: subType } = payload.subscription.entity.notes;
+            return await handleSubscriptionStart({ subscription: subType || "PRO", user_id: user, plan_id: process.env.RAZORPAY_PLAN_ID_199 });
         default:
             console.log(`Unhandled event: ${event}`);
-            return null
+            return true
     }
 }
 

@@ -9,15 +9,14 @@ import { AISubscriberMiddleware } from "./middlewares/aiSubscriber.middleware.js
 
 
 const app = express();
-app.use(express.json());
 app.use(cors({
     origin: 'https://nutri-cal.pages.dev',
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     credentials: true
 }));
 
-app.use("/api/chatbot", AuthMiddleWare, AISubscriberMiddleware, aiChatbotRoutes);
-app.use("/payment", AuthMiddleWare, paymentRoutes)
+app.use("/api/chatbot", express.json(), AuthMiddleWare, AISubscriberMiddleware, aiChatbotRoutes);
+app.use("/payment", express.json(), AuthMiddleWare, paymentRoutes)
 app.use("/webhook", express.raw({ type: '*/*' }), webhookRouter)
 
 // const PORT = process.env.PORT || 3000;

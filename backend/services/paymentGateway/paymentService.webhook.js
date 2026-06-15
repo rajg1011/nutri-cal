@@ -2,6 +2,8 @@ import isSubscriptionActive from "../../utils/subscriptionActive.js";
 import { Constants } from "../../constant.js";
 import supabaseAdmin from "../../config/supabaseAdmin.js";
 import { razorPayWebhook } from "./provider/razorpay.webhook.js";
+import { deleteCache } from "../cache/cache.js";
+import { Keys } from "../../utils/cacheKeys.js";
 
 const webhookProvider = {
     "razorpay": razorPayWebhook
@@ -45,6 +47,7 @@ const handlePaymentAuthorizedLogic = async ({ user_id, payment_id, subscription,
                 throw new Error("Error at handlePayementAuthorizedLogic's update query")
             }
         }
+        await deleteCache(Keys.userSubscribe(user_id))
         return true
     } catch (error) {
         console.error("Error in webhook:", error);
@@ -84,6 +87,7 @@ const handleSubscriptionStart = async ({ user_id, plan_id, subscription }) => {
                 throw new Error("Error at handleSubscriptionStart's update query")
             }
         }
+        await deleteCache(Keys.userSubscribe(user_id))
         return true
 
     }

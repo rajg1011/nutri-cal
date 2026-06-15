@@ -2,7 +2,8 @@ import { SUBSCRIPTION_TYPE, Constants } from "../../constant.js"
 import paymentService from "../../services/paymentGateway/paymentService.js"
 import isSubscriptionActive from "../../utils/subscriptionActive.js"
 import supabaseAdmin from "../../config/supabaseAdmin.js"
-
+import { deleteCache } from "../../services/cache/cache.js"
+import { Keys } from "../../utils/cacheKeys.js"
 
 const createOrderController = async (req, res) => {
     try {
@@ -117,6 +118,8 @@ const verifyPaymentController = async (req, res) => {
                 return res.status(500).json({ success: false, message: "Internal Server Error" })
             }
         }
+
+        await deleteCache(Keys.userSubscribe(req.user))
 
         return res.status(200).json({ success: true, message: "Subscription Successful" })
     } catch (e) {

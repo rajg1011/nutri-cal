@@ -1,4 +1,6 @@
 import { validMealTypes } from "../../constant.js";
+import { Keys } from "../../utils/cacheKeys.js";
+import { deleteCache, getCache, setCache } from "../cache/cache.js";
 
 const errorMessage = (errorCode, errorMessage) => {
     return {
@@ -11,8 +13,16 @@ const errorMessage = (errorCode, errorMessage) => {
 }
 
 
-async function get_user_profile(_, { supabase, signal }) {
+async function get_user_profile(_, { supabase, signal, userId }) {
     try {
+        const profileDetails = await getCache(Keys.userProfileDetails(userId));
+
+        if (profileDetails) {
+            return {
+                success: true,
+                data: profileDetails
+            }
+        }
         const { data, error } = await supabase
             .from('userProfile')
             .select('height,weight,age,gender,dietType,activityLevel,goal')
@@ -20,6 +30,8 @@ async function get_user_profile(_, { supabase, signal }) {
             .abortSignal(signal);
 
         if (error) throw error
+
+        await setCache(Keys.userProfileDetails(userId), data)
 
         return {
             success: true,
@@ -32,12 +44,14 @@ async function get_user_profile(_, { supabase, signal }) {
 }
 
 
-async function get_today_nutrition(_, { supabase, signal }) {
+async function get_today_nutrition(_, { supabase, signal, userId }) {
     try {
         const start = new Date();
         start.setHours(0, 0, 0, 0);
         const end = new Date();
         end.setHours(23, 59, 59, 999);
+
+        let userGoalCache = await getCache(Keys.userGoal(userId));
 
         const [mealsResult, goalResult] = await Promise.all([
             supabase
@@ -47,13 +61,13 @@ async function get_today_nutrition(_, { supabase, signal }) {
                 .lte('created_at', end.toISOString())
                 .abortSignal(signal),
 
-            supabase
+            !userGoalCache ? supabase
                 .from('dailyUserGoals')
                 .select('calories')
                 .order('created_at', { ascending: false })
                 .limit(1)
                 .single()
-                .abortSignal(signal)
+                .abortSignal(signal) : Promise.resolve({ data: null, error: null })
         ]);
 
         const { data: meals, error } = mealsResult;
@@ -61,6 +75,10 @@ async function get_today_nutrition(_, { supabase, signal }) {
 
         if (error) throw error;
         if (goalError) throw goalError;
+
+        if(!userGoalCache && goal){
+            await setCache(Keys.userGoal(userId), goal)
+        }
 
         const total_calories = meals.reduce(
             (sum, meal) => sum + (meal.calories || 0),
@@ -213,17 +231,20 @@ async function log_meal({ food_item, meal_type, calories, protein, quantity, mea
 }
 
 
-async function update_goal({ calories }, { supabase, signal }) {
+async function update_goal({ calories }, { supabase, signal, userId }) {
     try {
         if (!calories) {
             return errorMessage('ARGUMENT_NOT_AVAILABLE', "Provide calories to be inserted")
         }
-        const { data, error } = await supabase
+        const { _ , error } = await supabase
             .from('dailyUserGoals')
             .insert([{ calories }])
             .abortSignal(signal)
 
         if (error) throw error;
+
+        await deleteCache(Keys.userGoal(userId));
+
         return { success: true, data: "Updated Successfully" };
     } catch (e) {
         return errorMessage('INTERNAL_SERVER_ERROR', e?.message || "Internal Server Error")
