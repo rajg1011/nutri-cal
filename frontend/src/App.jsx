@@ -6,6 +6,7 @@ import Login from './Login';
 import Dashboard from './Dashboard';
 import LoadingScreen from './LoadingScreen';
 import ProfileOnboarding from './ProfileOnboarding';
+import InstallAppPrompt from './InstallAppPrompt';
 import './css/App.css';
 
 
@@ -159,6 +160,7 @@ function App() {
         }
       />
     </Routes>
+     <InstallAppPrompt />
      <ToastContainer position="top-center" autoClose={2000} />
     </>
   );

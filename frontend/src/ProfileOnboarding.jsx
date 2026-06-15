@@ -2,11 +2,15 @@ import { useMemo, useState } from 'react';
 import {
   ArrowLeft,
   ArrowRight,
+  Drumstick,
   Dumbbell,
+  Egg,
+  Flame,
   Leaf,
   Mars,
   Ruler,
   Scale,
+  Sprout,
   Target,
   Transgender,
   User,
@@ -25,17 +29,17 @@ const GENDERS = [
 ];
 
 const DIET_TYPES = [
-  { value: 'Vegetarian', label: 'Vegetarian', icon: '🥦' },
-  { value: 'Vegan', label: 'Vegan', icon: '🌱' },
-  { value: 'Eggetarian', label: 'Eggetarian', icon: '🥚' },
-  { value: 'Non-Vegetarian', label: 'Non-Vegetarian', icon: '🍗' },
+  { value: 'Vegetarian', label: 'Vegetarian', Icon: Leaf },
+  { value: 'Vegan', label: 'Vegan', Icon: Sprout },
+  { value: 'Eggetarian', label: 'Eggetarian', Icon: Egg },
+  { value: 'Non-Vegetarian', label: 'Non-Vegetarian', Icon: Drumstick },
 ];
 
 const GOALS = [
-  { value: 'Fat Loss', label: 'Fat Loss', description: 'Lose body fat', icon: '🔥' },
-  { value: 'Maintenance', label: 'Maintenance', description: 'Stay at current weight', icon: '⚖️' },
-  { value: 'Muscle Gain', label: 'Muscle Gain', description: 'Build muscle mass', icon: '💪' },
-  { value: 'Lean Bulk', label: 'Lean Bulk', description: 'Gain muscle, minimal fat', icon: '🏋️' },
+  { value: 'Fat Loss', label: 'Fat Loss', description: 'Lose body fat', Icon: Flame },
+  { value: 'Maintenance', label: 'Maintenance', description: 'Stay at current weight', Icon: Scale },
+  { value: 'Muscle Gain', label: 'Muscle Gain', description: 'Build muscle mass', Icon: Dumbbell },
+  { value: 'Lean Bulk', label: 'Lean Bulk', description: 'Gain muscle, minimal fat', Icon: Dumbbell },
 ];
 
 const ACTIVITY_LEVELS = [
@@ -336,7 +340,7 @@ const ProfileOnboarding = ({ user, onComplete }) => {
                     type="button"
                     onClick={() => updateField('dietType', diet.value)}
                   >
-                    <span className="choice-emoji">{diet.icon}</span>
+                    <diet.Icon className="choice-icon" size={24} />
                     <span>{diet.label}</span>
                   </button>
                 ))}
@@ -361,7 +365,7 @@ const ProfileOnboarding = ({ user, onComplete }) => {
                     onClick={() => toggleGoal(goal.value)}
                   >
                     <span className="goal-check" aria-hidden="true" />
-                    <span className="choice-emoji">{goal.icon}</span>
+                    <goal.Icon className="choice-icon" size={24} />
                     <span className="choice-label">{goal.label}</span>
                     <span className="choice-description">{goal.description}</span>
                   </button>

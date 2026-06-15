@@ -1,13 +1,14 @@
 import { BookOpen, BarChart2, Activity } from 'lucide-react';
 import './css/Login.css';
 import GoogleIcon from './assets/google';
+import SaladIcon from './assets/icons/SaladIcon';
 
 const Login = ({ onLogin }) => {
   return (
     <div className="login-container fade-in">
       <div className="login-header">
         <div className="login-logo">
-          <span className="login-logo-icon">🥗</span>
+          <SaladIcon size={48} className="login-logo-icon" />
         </div>
         <h1 className="login-title">NutriCal</h1>
         <p className="login-subtitle">Your smart Indian food calorie tracker</p>

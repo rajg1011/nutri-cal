@@ -1,15 +1,15 @@
 import { useState, useEffect } from 'react';
-import { X, Search, ChevronLeft, ChevronRight, Flame, Bookmark, BookmarkCheck } from 'lucide-react';
+import { X, Search, ChevronLeft, ChevronRight, Flame, Bookmark, BookmarkCheck, Sunrise, Sun, Moon, Apple, Star, Database } from 'lucide-react';
 import supabase from '../core/supabaseClient';
 import LoadingScreen from './LoadingScreen';
 import './css/LogFoodModal.css';
 import useScrollLock from './hooks/useScrollLock';
 
 const MEALS = [
-  { id: 'Breakfast', icon: '🌅', label: 'Breakfast' },
-  { id: 'Lunch', icon: '☀️', label: 'Lunch' },
-  { id: 'Dinner', icon: '🌙', label: 'Dinner' },
-  { id: 'Snack', icon: '🍎', label: 'Snack' }
+  { id: 'Breakfast', Icon: Sunrise, label: 'Breakfast' },
+  { id: 'Lunch', Icon: Sun, label: 'Lunch' },
+  { id: 'Dinner', Icon: Moon, label: 'Dinner' },
+  { id: 'Snack', Icon: Apple, label: 'Snack' },
 ];
 
 const LogFoodModal = ({ user, onClose, onAdd }) => {
@@ -211,7 +211,7 @@ const LogFoodModal = ({ user, onClose, onAdd }) => {
                   className={`meal-btn ${selectedMeal === meal.id ? 'selected' : ''}`}
                   onClick={() => setSelectedMeal(meal.id)}
                 >
-                  <span className="meal-icon">{meal.icon}</span>
+                  <span className="meal-icon"><meal.Icon size={18} /></span>
                   <span className="meal-label">{meal.label}</span>
                 </button>
               ))}
@@ -243,7 +243,7 @@ const LogFoodModal = ({ user, onClose, onAdd }) => {
                         >
                           <div className="result-info">
                             <div className="result-name">{result.name}</div>
-                            <div className="result-source">{result.isPreference ? '⭐️ My Foods' : '🇮🇳 NutriCal Data'}</div>
+                            <div className="result-source">{result.isPreference ? <><Star size={13} /> My Foods</> : <><Database size={13} /> NutriCal Data</>}</div>
                           </div>
                           <div className="result-stats">
                             <div className="result-calories">{result.caloriesPerUnit} kcal</div>

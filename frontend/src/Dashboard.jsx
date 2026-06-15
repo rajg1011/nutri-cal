@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Leaf, SlidersHorizontal, Plus, Target, Flame, Trash2, User, History, LogOut, Sparkles } from 'lucide-react';
+import { Leaf, SlidersHorizontal, Plus, Target, Flame, Trash2, User, History, LogOut, Sparkles, Sunrise, Sun, Moon, Apple } from 'lucide-react';
+import SaladIcon from './assets/icons/SaladIcon';
 import './css/App.css';
 import './css/AIChatbot.css';
 import LogFoodModal from './LogFoodModal';
@@ -13,10 +14,10 @@ import { toast } from 'react-toastify';
 import { ACTIVE_AI, SUBSCRIPTION_TYPE } from '../utils/constant';
 
 const MEAL_ICONS = {
-  Breakfast: '🌅',
-  Lunch: '☀️',
-  Dinner: '🌙',
-  Snack: '🍎'
+  Breakfast: Sunrise,
+  Lunch: Sun,
+  Dinner: Moon,
+  Snack: Apple,
 };
 
 const Dashboard = ({ user, session }) => {
@@ -316,22 +317,26 @@ const Dashboard = ({ user, session }) => {
 
         {logs.length === 0 ? (
           <div className="empty-state fade-in">
-            <div className="empty-icon-circle">🥗</div>
+            <div className="empty-icon-circle"><SaladIcon size={48} /></div>
             <h3 className="empty-title">No food logged yet</h3>
             <p className="empty-desc">Tap <strong>+ Add Food</strong> to get started</p>
           </div>
         ) : (
           <div className="log-list">
-            {groupedLogs.map(group => (
+            {groupedLogs.map(group => {
+              const GroupIcon = MEAL_ICONS[group.meal];
+              return (
               <div key={group.meal} className="log-group">
                 <div className="log-group-header">
-                  <div className="log-group-title"><span className="meal-icon">{MEAL_ICONS[group.meal]}</span> {group.meal}</div>
+                  <div className="log-group-title"><span className="meal-icon"><GroupIcon size={18} /></span> {group.meal}</div>
                   <div className="log-group-total">{group.total} kcal</div>
                 </div>
                 <div className="log-items">
-                  {group.logs.map(log => (
+                  {group.logs.map(log => {
+                    const LogIcon = MEAL_ICONS[log.meal];
+                    return (
                     <div key={log.id} className="log-item fade-in">
-                      <div className="log-item-icon">{MEAL_ICONS[log.meal]}</div>
+                      <div className="log-item-icon"><LogIcon size={20} /></div>
                       <div className="log-item-details">
                         <div className="log-item-name">{log.name}</div>
                         <div className="log-item-sub">
@@ -346,10 +351,12 @@ const Dashboard = ({ user, session }) => {
                       </div>
                       <button className="log-item-delete" onClick={() => handleDeleteFood(log.id)}><Trash2 size={16} /></button>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
