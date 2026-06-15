@@ -675,6 +675,20 @@
   transform: translateY(1px);
 }
 
+.install-ios-banner {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  padding: 14px 20px;
+  background: #1e332a;
+  color: #fff;
+  font-size: 14px;
+  text-align: center;
+  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.2);
+}
+
 /* AI Sparkle Loading */
 .loading-sparkle {
   animation: sparkle-rotate 1.5s linear infinite;

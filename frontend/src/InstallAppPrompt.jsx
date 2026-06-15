@@ -4,22 +4,35 @@ const isStandalone = () =>
   window.matchMedia('(display-mode: standalone)').matches ||
   window.navigator.standalone === true;
 
+const isIOS = () =>
+  /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
+
 export default function InstallAppPrompt() {
   const [installEvent, setInstallEvent] = useState(null);
-  const [canInstall, setCanInstall] = useState(false);
+  const [showIOSBanner, setShowIOSBanner] = useState(false);
 
   useEffect(() => {
     if (isStandalone()) return;
 
+    if (isIOS()) {
+      setShowIOSBanner(true);
+      return;
+    }
+
+    // Pick up the event captured in main.jsx before React mounted
+    if (window.__installPromptEvent) {
+      setInstallEvent(window.__installPromptEvent);
+    }
+
     const handleBeforeInstallPrompt = (event) => {
       event.preventDefault();
+      window.__installPromptEvent = event;
       setInstallEvent(event);
-      setCanInstall(true);
     };
 
     const handleAppInstalled = () => {
+      window.__installPromptEvent = null;
       setInstallEvent(null);
-      setCanInstall(false);
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
@@ -33,16 +46,21 @@ export default function InstallAppPrompt() {
 
   const handleInstall = async () => {
     if (!installEvent) return;
-
     installEvent.prompt();
-
     await installEvent.userChoice;
-
+    window.__installPromptEvent = null;
     setInstallEvent(null);
-    setCanInstall(false);
   };
 
-  if (!canInstall) return null;
+  if (showIOSBanner) {
+    return (
+      <div className="install-ios-banner">
+        Tap <strong>Share</strong> then <strong>Add to Home Screen</strong> to install NutriCal.
+      </div>
+    );
+  }
+
+  if (!installEvent) return null;
 
   return (
     <button className="install-app-btn" type="button" onClick={handleInstall}>

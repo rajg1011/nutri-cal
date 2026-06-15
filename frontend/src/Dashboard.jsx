@@ -36,6 +36,7 @@ const Dashboard = ({ user, session }) => {
   const [isCheckingSub, setIsCheckingSub] = useState(false);
   const { pay, error, isLoading: loadingPayment } = usePayment({ user, session })
   const [logs, setLogs] = useState([]);
+  const [signingOut, setSigningOut] = useState(false);
 
   const consumed = logs.reduce((acc, log) => acc + log.calories, 0);
   const totalProtein = logs.reduce((acc, log) => acc + (parseFloat(log.protein) || 0), 0);
@@ -205,7 +206,12 @@ const Dashboard = ({ user, session }) => {
 
   const handleSignOut = async () => {
     setShowDropdown(false);
-    await supabase.auth.signOut();
+    setSigningOut(true);
+    try {
+      await supabase.auth.signOut();
+    } catch {
+      setSigningOut(false);
+    }
   };
 
   const mealsList = ['Breakfast', 'Lunch', 'Dinner', 'Snack'];
@@ -213,6 +219,8 @@ const Dashboard = ({ user, session }) => {
     const mealLogs = logs.filter(l => l.meal === meal);
     return { meal, logs: mealLogs, total: mealLogs.reduce((acc, l) => acc + l.calories, 0) };
   }).filter(group => group.logs.length > 0);
+
+  if (signingOut) return <LoadingScreen />;
 
   return (
     <div className="app-container fade-in">
