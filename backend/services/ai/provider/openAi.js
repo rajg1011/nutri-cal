@@ -171,12 +171,12 @@ const tools = [
         type: "object",
         properties: {
           meal_type: {
-            type: "number",
+            type: "string",
             enum: validMealTypes,
-            description: "Type of meal such as breakfast, lunch, dinner, or snack"
+            description: "Type of meal such as breakfast, lunch, dinner, or snack. Omit for general recommendations."
           },
         },
-        required: ["meal_type"],
+        required: [],
         additionalProperties: false
       },
     }

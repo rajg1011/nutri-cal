@@ -252,20 +252,18 @@ async function update_goal({ calories }, { supabase, signal, userId }) {
 }
 
 
-// add more LLm description in tool
-
-async function get_deficiency_analysis(_, { supabase, signal }) {
+async function get_deficiency_analysis(_, { supabase, signal, userId }) {
     try {
         const [profile, today] = await Promise.all([
-            get_user_profile(_, { supabase, signal }),
-            get_today_nutrition(_, { supabase, signal })
+            get_user_profile({}, { supabase, signal, userId }),
+            get_today_nutrition({}, { supabase, signal, userId })
         ]);
 
         if (!profile.success || !today.success) {
             return errorMessage('INTERNAL_SERVER_ERROR', 'Failed to fetch profile or nutrition');
         }
 
-        const protein_target = profile.data.weight * 1.6;
+        const protein_target = profile.data.weight ? Math.round(profile.data.weight * 1.6) : null;
         const calorie_target = today.data.goal_calories;
 
         const deficiencies = [];
@@ -274,7 +272,7 @@ async function get_deficiency_analysis(_, { supabase, signal }) {
                 nutrient: 'protein',
                 consumed: today.data.total_protein,
                 target: protein_target,
-                gap: protein_target - today.data.total_protein,
+                gap: Math.round(protein_target - today.data.total_protein),
             });
         }
         if (calorie_target && today.data.total_calories < calorie_target * 0.8) {
@@ -288,7 +286,7 @@ async function get_deficiency_analysis(_, { supabase, signal }) {
 
         return {
             success: true,
-            data: { deficiencies, protein_target, calorie_target, profile: profile.data }
+            data: { deficiencies, protein_target, calorie_target, today: today.data, profile: profile.data }
         };
     } catch (e) {
         return errorMessage('INTERNAL_SERVER_ERROR', e?.message || 'Internal Server Error');
@@ -297,17 +295,14 @@ async function get_deficiency_analysis(_, { supabase, signal }) {
 
 
 
-// need to check
-async function generate_meal_recommendations({ meal_type = null }, { supabase, signal }) {
+async function generate_meal_recommendations({ meal_type = null }, { supabase, signal, userId }) {
     try {
         const todayStart = new Date();
         todayStart.setHours(0, 0, 0, 0);
         const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
 
-        // Run all independent queries in parallel
-        const [analysis, profile, recentFoods, todayFoods, prefs] = await Promise.all([
-            get_deficiency_analysis(_, { supabase, signal }),
-            get_user_profile(_, { supabase, signal }),
+        const [analysis, recentFoods, todayFoods, prefs] = await Promise.all([
+            get_deficiency_analysis({}, { supabase, signal, userId }),
             supabase
                 .from('userCaloriesData')
                 .select('food_item, meal_type, calories, protein, quantity, meal_unit')
@@ -325,25 +320,29 @@ async function generate_meal_recommendations({ meal_type = null }, { supabase, s
                 .abortSignal(signal),
         ]);
 
-        if (!analysis.success || !profile.success) {
-            return errorMessage('INTERNAL_SERVER_ERROR', 'Failed to fetch analysis or profile');
+        if (!analysis.success) {
+            return errorMessage('INTERNAL_SERVER_ERROR', 'Failed to fetch deficiency analysis');
         }
 
         const needsProtein = analysis.data.deficiencies.find(d => d.nutrient === 'protein');
         const needsCalories = analysis.data.deficiencies.find(d => d.nutrient === 'calories');
 
-        const todayFoodNames = new Set(todayFoods.data?.map(f => f.food_item.toLowerCase()));
-        const notYetEatenToday = recentFoods.data?.filter(
-            f => !todayFoodNames.has(f.food_item.toLowerCase())
-        ) || [];
+        const todayFoodNames = new Set((todayFoods.data || []).map(f => f.food_item.toLowerCase()));
+        
+        const seenNames = new Set();
+        const notYetEatenToday = (recentFoods.data || []).filter(f => {
+            const name = f.food_item.toLowerCase();
+            if (todayFoodNames.has(name) || seenNames.has(name)) return false;
+            seenNames.add(name);
+            return true;
+        });
 
-        // Fallback to food DB only if not enough history
         let suggestedFoods = [];
         if (notYetEatenToday.length < 3) {
-            let query = supabase.from('foodDescription').select('*');
+            let query = supabase.from('foodDescription').select('name, caloriesPerUnit, proteinPerUnit, unit');
             if (needsProtein) query = query.order('proteinPerUnit', { ascending: false });
             else if (needsCalories) query = query.order('caloriesPerUnit', { ascending: false });
-            const { data: foods } = await query.limit(5);
+            const { data: foods } = await query.limit(5).abortSignal(signal);
             suggestedFoods = foods || [];
         }
 
@@ -351,7 +350,7 @@ async function generate_meal_recommendations({ meal_type = null }, { supabase, s
             success: true,
             data: {
                 meal_type,
-                diet_type: profile.data.dietType,
+                diet_type: analysis.data.profile.dietType,
                 deficiencies: analysis.data.deficiencies,
                 recent_not_eaten_today: notYetEatenToday,
                 preferred_foods: prefs.data || [],
