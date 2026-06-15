@@ -10,6 +10,7 @@ const isIOS = () =>
 export default function InstallAppPrompt() {
   const [installEvent, setInstallEvent] = useState(null);
   const [showIOSBanner, setShowIOSBanner] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
     if (isStandalone()) return;
@@ -19,7 +20,6 @@ export default function InstallAppPrompt() {
       return;
     }
 
-    // Pick up the event captured in main.jsx before React mounted
     if (window.__installPromptEvent) {
       setInstallEvent(window.__installPromptEvent);
     }
@@ -52,10 +52,18 @@ export default function InstallAppPrompt() {
     setInstallEvent(null);
   };
 
+  const handleDismiss = () => setDismissed(true);
+
+  if (dismissed) return null;
+
   if (showIOSBanner) {
     return (
-      <div className="install-ios-banner">
-        Tap <strong>Share</strong> then <strong>Add to Home Screen</strong> to install NutriCal.
+      <div className="install-banner">
+        <div className="install-banner-text">
+          <span className="install-banner-title">Install NutriCal</span>
+          <span className="install-banner-sub">Tap <strong>Share</strong> then <strong>Add to Home Screen</strong></span>
+        </div>
+        <button className="install-banner-close" onClick={handleDismiss} aria-label="Dismiss">&#x2715;</button>
       </div>
     );
   }
@@ -63,8 +71,13 @@ export default function InstallAppPrompt() {
   if (!installEvent) return null;
 
   return (
-    <button className="install-app-btn" type="button" onClick={handleInstall}>
-      Install App
-    </button>
+    <div className="install-banner">
+      <div className="install-banner-text">
+        <span className="install-banner-title">Install NutriCal</span>
+        <span className="install-banner-sub">Add to your home screen for quick access</span>
+      </div>
+      <button className="install-banner-btn" type="button" onClick={handleInstall}>Install</button>
+      <button className="install-banner-close" type="button" onClick={handleDismiss} aria-label="Dismiss">&#x2715;</button>
+    </div>
   );
 }

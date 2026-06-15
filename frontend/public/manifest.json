@@ -1,7 +1,7 @@
 {
   "id": "calorie-tracker-app",
   "name": "NutriCal",
-  "short_name": "nutri",
+  "short_name": "NutriCal",
   "description": "Track meals, calories, and nutrition goals from a focused installable app.",
   "start_url": "/",
   "scope": "/",
