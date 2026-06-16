@@ -1,5 +1,5 @@
 import { validMealTypes } from "../../constant.js";
-import { Keys } from "../../utils/cacheKeys.js";
+import { Keys, TTL } from "../../utils/cacheKeys.js";
 import { deleteCache, getCache, setCache } from "../cache/cache.js";
 
 const errorMessage = (errorCode, errorMessage) => {
@@ -31,7 +31,7 @@ async function get_user_profile(_, { supabase, signal, userId }) {
 
         if (error) throw error
 
-        await setCache(Keys.userProfileDetails(userId), data)
+        await setCache(Keys.userProfileDetails(userId), data, TTL.USER_PROFILE)
 
         return {
             success: true,
@@ -77,7 +77,7 @@ async function get_today_nutrition(_, { supabase, signal, userId }) {
         if (goalError) throw goalError;
 
         if(!userGoalCache && goal){
-            await setCache(Keys.userGoal(userId), goal)
+            await setCache(Keys.userGoal(userId), goal, TTL.USER_GOAL)
         }
 
         const total_calories = meals.reduce(
@@ -176,6 +176,15 @@ async function search_food_database({ query }, { supabase, signal }) {
         if (typeof query !== "string") {
             return errorMessage('INVALID_FORMAT', "Days must be Number")
         }
+
+        const cached = await getCache(Keys.foodSearch(query));
+        if (cached) {
+            return {
+                success: true,
+                data: cached
+            }
+        }
+
         const { data, error } = await supabase
             .from('foodDescription')
             .select('name,caloriesPerUnit,proteinPerUnit,unit')
@@ -184,6 +193,8 @@ async function search_food_database({ query }, { supabase, signal }) {
             .abortSignal(signal);
 
         if (error) throw error;
+
+        await setCache(Keys.foodSearch(query), data, TTL.FOOD_SEARCH)
 
         return {
             success: true,
@@ -301,7 +312,9 @@ async function generate_meal_recommendations({ meal_type = null }, { supabase, s
         todayStart.setHours(0, 0, 0, 0);
         const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
 
-        const [analysis, recentFoods, todayFoods, prefs] = await Promise.all([
+        const userPrefCache = await getCache(Keys.userPreference(userId));
+
+        const [analysis, recentFoods, todayFoods, prefsResult] = await Promise.all([
             get_deficiency_analysis({}, { supabase, signal, userId }),
             supabase
                 .from('userCaloriesData')
@@ -314,15 +327,21 @@ async function generate_meal_recommendations({ meal_type = null }, { supabase, s
                 .select('food_item')
                 .gte('created_at', todayStart.toISOString())
                 .abortSignal(signal),
-            supabase
+            !userPrefCache ? supabase
                 .from('userPreference')
                 .select('food, protein, calories, unit')
-                .abortSignal(signal),
+                .abortSignal(signal) : Promise.resolve({ data: null, error: null }),
         ]);
 
         if (!analysis.success) {
             return errorMessage('INTERNAL_SERVER_ERROR', 'Failed to fetch deficiency analysis');
         }
+
+        if (!userPrefCache && prefsResult.data) {
+            await setCache(Keys.userPreference(userId), prefsResult.data, TTL.USER_PREFERENCE)
+        }
+
+        const preferredFoods = userPrefCache || prefsResult.data || [];
 
         const needsProtein = analysis.data.deficiencies.find(d => d.nutrient === 'protein');
         const needsCalories = analysis.data.deficiencies.find(d => d.nutrient === 'calories');
@@ -353,7 +372,7 @@ async function generate_meal_recommendations({ meal_type = null }, { supabase, s
                 diet_type: analysis.data.profile.dietType,
                 deficiencies: analysis.data.deficiencies,
                 recent_not_eaten_today: notYetEatenToday,
-                preferred_foods: prefs.data || [],
+                preferred_foods: preferredFoods,
                 suggested_foods: suggestedFoods,
                 low_data: notYetEatenToday.length < 3
             }

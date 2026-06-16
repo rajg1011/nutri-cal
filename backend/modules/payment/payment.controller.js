@@ -2,8 +2,8 @@ import { SUBSCRIPTION_TYPE, Constants } from "../../constant.js"
 import paymentService from "../../services/paymentGateway/paymentService.js"
 import isSubscriptionActive from "../../utils/subscriptionActive.js"
 import supabaseAdmin from "../../config/supabaseAdmin.js"
-import { deleteCache } from "../../services/cache/cache.js"
-import { Keys } from "../../utils/cacheKeys.js"
+import { deleteCache, getCache, setCache } from "../../services/cache/cache.js"
+import { Keys, TTL } from "../../utils/cacheKeys.js"
 
 const createOrderController = async (req, res) => {
     try {
@@ -151,6 +151,12 @@ const createPlanController = async (req, res) => {
 
 const checkSubscriptionController = async (req, res) => {
     try {
+        const cached = await getCache(Keys.userSubscribe(req.user));
+
+        if (cached) {
+            return res.status(200).json({ success: true, isAvailable: cached.isSubscriber });
+        }
+
         const { data, error } = await supabaseAdmin
             .from("userSubscriptionDetails")
             .select('*')
@@ -163,6 +169,8 @@ const checkSubscriptionController = async (req, res) => {
         }
 
         const isAvailable = isSubscriptionActive(data);
+
+        await setCache(Keys.userSubscribe(req.user), { isSubscriber: isAvailable }, TTL.USER_SUBSCRIBER);
 
         return res.status(200).json({ success: true, isAvailable });
     } catch (e) {
