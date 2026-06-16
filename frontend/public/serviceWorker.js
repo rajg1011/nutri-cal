@@ -1,6 +1,6 @@
 // Web Worker(run in background) handle background and offline tasks -> add medium story
 
-const CACHE_NAME = 'calorie-tracker-v1';
+const CACHE_NAME = 'calorie-tracker-v-1.0.0.1';
 const APP_SHELL = [
   '/',
   '/index.html',

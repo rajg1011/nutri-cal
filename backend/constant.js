@@ -1,5 +1,5 @@
 export const Constants = {
-    QUESTION_AKSED: 50,
+    QUESTION_AKSED: 20,
 }
 
 export const SUBSCRIPTION_TYPE = {

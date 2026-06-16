@@ -7,9 +7,13 @@ const isStandalone = () =>
 const isIOS = () =>
   /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
 
+const isInAppBrowser = () =>
+  /FBAN|FBAV|FB_IAB|Instagram|WhatsApp|Line\/|MicroMessenger|TikTok/i.test(navigator.userAgent);
+
 export default function InstallAppPrompt() {
   const [installEvent, setInstallEvent] = useState(null);
   const [showIOSBanner, setShowIOSBanner] = useState(false);
+  const [iosInApp, setIosInApp] = useState(false);
   const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
@@ -17,6 +21,7 @@ export default function InstallAppPrompt() {
 
     if (isIOS()) {
       setShowIOSBanner(true);
+      setIosInApp(isInAppBrowser());
       return;
     }
 
@@ -61,7 +66,11 @@ export default function InstallAppPrompt() {
       <div className="install-banner">
         <div className="install-banner-text">
           <span className="install-banner-title">Install NutriCal</span>
-          <span className="install-banner-sub">Tap <strong>Share</strong> then <strong>Add to Home Screen</strong></span>
+          {iosInApp ? (
+            <span className="install-banner-sub">Open this page in <strong>Safari / Chrome</strong> to install</span>
+          ) : (
+            <span className="install-banner-sub">Tap <strong>Share</strong> then <strong>Add to Home Screen</strong></span>
+          )}
         </div>
         <button className="install-banner-close" onClick={handleDismiss} aria-label="Dismiss">&#x2715;</button>
       </div>

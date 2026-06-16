@@ -10,8 +10,10 @@ const AISubscriberMiddleware = async (req, res, next) => {
             if (!isUserSubscribeCache.isSubscriber) {
                 return res.status(403).json({ message: "You are not subscribed" });
             }
+            req.subscriptionType = isUserSubscribeCache.type;
             return next();
         }
+
         const { data, error } = await req.supabase.from('userSubscriptionDetails').select('*');
 
         if (error) {
@@ -19,13 +21,15 @@ const AISubscriberMiddleware = async (req, res, next) => {
         }
 
         const isSubscriber = isSubscriptionActive(data);
+        const subscriptionType = isSubscriber ? data[0].subscription_type?.toUpperCase() : null;
 
-        await setCache(Keys.userSubscribe(req.user), { isSubscriber }, TTL.USER_SUBSCRIBER);
+        await setCache(Keys.userSubscribe(req.user), { isSubscriber, type: subscriptionType }, TTL.USER_SUBSCRIBER);
 
         if (!isSubscriber) {
             return res.status(403).json({ message: "You are not subscribed" });
         }
 
+        req.subscriptionType = subscriptionType;
         return next()
     } catch (e) {
         console.log(e);

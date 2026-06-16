@@ -55,38 +55,50 @@ const handlePaymentAuthorizedLogic = async ({ user_id, payment_id, subscription,
     }
 };
 
-const handleSubscriptionStart = async ({ user_id, plan_id, subscription }) => {
+const handleSubscriptionCharged = async ({ user_id, subscription_id, subscription }) => {
     try {
-        if (!user_id || !plan_id || !subscription) {
-            throw new Error("Invalid arguments at handleSubscriptionStart")
+        if (!user_id || !subscription_id || !subscription) {
+            throw new Error("Invalid arguments at handleSubscriptionCharged")
         }
-        const { data, error } = await supabaseAdmin.from("userSubscriptionDetails").select('*').eq('user_id', user_id).eq('status', 'ACTIVE')
-        if (error) {
-            throw new Error("Error at handleSubscriptionStart's fetch query")
-        }
-        if (!isSubscriptionActive(data)) {
-            const purchasedPlan = subscription.toUpperCase();
-            let updatePayload = {
-                user_id,
-                subscription_type: purchasedPlan,
-                subscription_id: plan_id,
-                status: "ACTIVE"
-            };
 
-            if (purchasedPlan === 'QUESTION') {
-                updatePayload.question_asked = Constants.QUESTION_AKSED;
-            } else if (purchasedPlan === 'PRO') {
-                const futureDate = new Date();
-                futureDate.setMonth(futureDate.getMonth() + 1);
-                updatePayload.end_date = futureDate.toISOString();
-            }
+        const { data: existingRows, error: fetchError } = await supabaseAdmin
+            .from("userSubscriptionDetails")
+            .select('*')
+            .eq('user_id', user_id);
 
-            const { _, error: subError } = await supabaseAdmin.from('userSubscriptionDetails')
-                .upsert(updatePayload, { onConflict: 'user_id' })
-            if (subError) {
-                throw new Error("Error at handleSubscriptionStart's update query")
-            }
+        if (fetchError) {
+            throw new Error("Error at handleSubscriptionCharged's fetch query")
         }
+
+        const existing = existingRows?.[0];
+        const purchasedPlan = subscription.toUpperCase();
+
+        let updatePayload = {
+            user_id,
+            subscription_type: purchasedPlan,
+            subscription_id,
+            status: "ACTIVE"
+        };
+
+        if (purchasedPlan === 'QUESTION') {
+            if (isSubscriptionActive(existingRows)) {
+                await deleteCache(Keys.userSubscribe(user_id))
+                return true;
+            }
+            updatePayload.question_asked = Constants.QUESTION_AKSED;
+        } else if (purchasedPlan === 'PRO') {
+            const currentEndDate = existing?.end_date ? new Date(existing.end_date) : null;
+            const baseDate = currentEndDate && currentEndDate > new Date() ? currentEndDate : new Date();
+            baseDate.setMonth(baseDate.getMonth() + 1);
+            updatePayload.end_date = baseDate.toISOString();
+        }
+
+        const { error: subError } = await supabaseAdmin.from('userSubscriptionDetails')
+            .upsert(updatePayload, { onConflict: 'user_id' })
+        if (subError) {
+            throw new Error("Error at handleSubscriptionCharged's update query")
+        }
+
         await deleteCache(Keys.userSubscribe(user_id))
         return true
 
@@ -126,4 +138,4 @@ const paymentServiceWebhook = (() => {
 })()
 
 export default paymentServiceWebhook;
-export { handlePaymentAuthorizedLogic, handleSubscriptionStart }
+export { handlePaymentAuthorizedLogic, handleSubscriptionCharged }
