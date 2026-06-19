@@ -1,4 +1,5 @@
-const promptBuilderforChatbot = (message) => {
+// Structured the system prompt as a static prefix so OpenAI's prompt caching applies
+const promptBuilderforChatbot = () => {
   const systemPrompt = `
   You are a strict, practical, and intelligent fitness and nutrition coach.
 
@@ -58,10 +59,7 @@ const promptBuilderforChatbot = (message) => {
   - No long paragraphs
   `;
 
-  const userPrompt = `
-      User Question: "${message}"
-  `
-  return { systemPrompt, userPrompt }
+  return systemPrompt;
 }
 
 export { promptBuilderforChatbot }

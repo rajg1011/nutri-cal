@@ -1,35 +1,127 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { Send, X, Sparkles } from 'lucide-react';
 import './css/AIChatbot.css';
 import useScrollLock from './hooks/useScrollLock';
 
+const HISTORY_PAGE_SIZE = 10;
+const SCROLL_TOP_LOAD_THRESHOLD = 70;
+
+const toMessage = (msg) => ({
+  id: msg.id,
+  type: msg.role === 'assistant' ? 'ai' : 'user',
+  content: msg.content,
+});
+
 const AIChatbot = ({ user, session, onClose }) => {
   const [messages, setMessages] = useState([
     {
-      id: 1,
+      id: 'welcome',
       type: 'ai',
       content: `Hi ${user?.user_metadata?.full_name?.split(' ')[0] || 'there'}! I'm your NutriAI assistant. How can I help you reach your goals today?`
     }
   ]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
-  const messagesEndRef = useRef(null);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [hasMoreHistory, setHasMoreHistory] = useState(false);
+  const messagesContainerRef = useRef(null);
+  const oldestCursorRef = useRef(null);
+  const scrollActionRef = useRef('bottom');
+  const preserveOffsetRef = useRef(0);
 
   useScrollLock();
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  useLayoutEffect(() => {
+    const container = messagesContainerRef.current;
+    if (!container) return;
+
+    const action = scrollActionRef.current;
+    scrollActionRef.current = 'bottom';
+
+    if (action === 'preserve') {
+      container.scrollTop = container.scrollHeight - preserveOffsetRef.current;
+    } else if (action === 'bottom-smooth') {
+      container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
+    } else {
+      container.scrollTop = container.scrollHeight;
+    }
+  }, [messages]);
+
+  useEffect(() => {
+    const container = messagesContainerRef.current;
+    if (isTyping && container) {
+      container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
+    }
+  }, [isTyping]);
+
+  const fetchHistoryPage = async (cursor) => {
+    const url = new URL(`${import.meta.env.VITE_BACKEND_URL}/api/chatbot/history`);
+    url.searchParams.set('limit', HISTORY_PAGE_SIZE);
+    if (cursor) url.searchParams.set('cursor', cursor);
+
+    const response = await fetch(url, {
+      headers: { 'Authorization': `Bearer ${session?.access_token}` },
+    });
+    return response.json();
   };
 
   useEffect(() => {
-    scrollToBottom();
-  }, [messages, isTyping]);
+    const loadHistory = async () => {
+      try {
+        const data = await fetchHistoryPage();
+
+        if (data.success && data.history?.length > 0) {
+          setMessages(data.history.map(toMessage));
+          oldestCursorRef.current = data.history[0].id;
+          setHasMoreHistory(data.history.length === HISTORY_PAGE_SIZE);
+        }
+      } catch (error) {
+        console.error('Error loading chat history:', error);
+      }
+    };
+
+    loadHistory();
+  }, []);
+
+  const loadOlderMessages = async () => {
+    if (isLoadingMore || !hasMoreHistory || oldestCursorRef.current == null) return;
+
+    setIsLoadingMore(true);
+    try {
+      const data = await fetchHistoryPage(oldestCursorRef.current);
+
+      if (data.success && data.history?.length > 0) {
+        const container = messagesContainerRef.current;
+        if (container) {
+          preserveOffsetRef.current = container.scrollHeight - container.scrollTop;
+          scrollActionRef.current = 'preserve';
+        }
+
+        setMessages(prev => [...data.history.map(toMessage), ...prev]);
+        oldestCursorRef.current = data.history[0].id;
+        setHasMoreHistory(data.history.length === HISTORY_PAGE_SIZE);
+      } else {
+        setHasMoreHistory(false);
+      }
+    } catch (error) {
+      console.error('Error loading older messages:', error);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  };
+
+  const handleMessagesScroll = (e) => {
+    if (e.target.scrollTop < SCROLL_TOP_LOAD_THRESHOLD) {
+      loadOlderMessages();
+    }
+  };
 
 
   const handleSend = async () => {
     if (!input.trim()) return;
 
     const userMsg = { id: Date.now(), type: 'user', content: input };
+    scrollActionRef.current = 'bottom-smooth';
     setMessages(prev => [...prev, userMsg]);
     const currentInput = input;
     setInput('');
@@ -53,6 +145,7 @@ const AIChatbot = ({ user, session, onClose }) => {
           type: 'ai',
           content: data.response
         };
+        scrollActionRef.current = 'bottom-smooth';
         setMessages(prev => [...prev, aiResponse]);
       } else {
         throw new Error(data.message || 'Failed to get response');
@@ -64,6 +157,7 @@ const AIChatbot = ({ user, session, onClose }) => {
         type: 'ai',
         content: "Sorry, I'm having trouble connecting to the brain right now. Please try again in a moment!"
       };
+      scrollActionRef.current = 'bottom-smooth';
       setMessages(prev => [...prev, errorMsg]);
     } finally {
       setIsTyping(false);
@@ -95,7 +189,16 @@ const AIChatbot = ({ user, session, onClose }) => {
           </button>
         </div>
 
-        <div className="ai-chat-messages">
+        <div className="ai-chat-messages" ref={messagesContainerRef} onScroll={handleMessagesScroll}>
+          {isLoadingMore && (
+            <div className="message ai">
+              <div className="typing-indicator">
+                <span className="dot"></span>
+                <span className="dot"></span>
+                <span className="dot"></span>
+              </div>
+            </div>
+          )}
           {messages.map(msg => (
             <div key={msg.id} className={`message ${msg.type}`}>
               {msg.content}
@@ -110,7 +213,6 @@ const AIChatbot = ({ user, session, onClose }) => {
               </div>
             </div>
           )}
-          <div ref={messagesEndRef} />
         </div>
 
         {!isTyping && (

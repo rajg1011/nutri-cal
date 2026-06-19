@@ -198,7 +198,7 @@ const Dashboard = ({ user, session }) => {
       }
     } catch (err) {
       console.error('Subscription check failed:', err);
-      setShowSubscriptionModal(true);
+      toast.error("Something Went Wrong")
     } finally {
       setIsCheckingSub(false);
     }

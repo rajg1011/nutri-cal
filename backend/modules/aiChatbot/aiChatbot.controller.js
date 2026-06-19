@@ -1,7 +1,9 @@
 import aiServiceResponse from "../../services/ai/aiService.js";
 import supabaseAdmin from "../../config/supabaseAdmin.js";
-import { deleteCache } from "../../services/cache/cache.js";
-import { Keys } from "../../utils/cacheKeys.js";
+import { getCache, setCache, deleteCache } from "../../services/cache/cache.js";
+import { Keys, TTL } from "../../utils/cacheKeys.js";
+
+const DEFAULT_HISTORY_LIMIT = 10;
 
 const aiChatbotController = async (req, res) => {
   try {
@@ -33,4 +35,44 @@ const aiChatbotController = async (req, res) => {
   }
 }
 
-export { aiChatbotController }
+const getChatHistoryController = async (req, res) => {
+  try {
+    const limit = Math.min(Number(req.query.limit) || DEFAULT_HISTORY_LIMIT, 50);
+    const cursor = req.query.cursor ? Number(req.query.cursor) : null;
+    const isLatestPage = !cursor && limit === DEFAULT_HISTORY_LIMIT;
+
+    if (isLatestPage) {
+      const cached = await getCache(Keys.chatHistoryRecent(req.user));
+      if (cached) {
+        return res.status(200).json({ success: true, history: cached });
+      }
+    }
+
+    let query = req.supabase
+      .from("chatHistory")
+      .select("id, role, content, created_at")
+      .order("id", { ascending: false })
+      .limit(limit);
+
+    if (cursor) {
+      query = query.lt("id", cursor);
+    }
+
+    const { data, error } = await query;
+
+    if (error) throw error;
+
+    const history = (data || []).reverse();
+
+    if (isLatestPage && history.length > 0) {
+      await setCache(Keys.chatHistoryRecent(req.user), history, TTL.CHAT_MEMORY);
+    }
+
+    return res.status(200).json({ success: true, history })
+  } catch (e) {
+    console.log(e)
+    return res.status(500).json({ success: false, message: "Internal Server Error" })
+  }
+}
+
+export { aiChatbotController, getChatHistoryController }

@@ -10,6 +10,14 @@ const client = new OpenAI({
 
 const MAX_TOOL_ROUNDS = 5;
 const TOOL_TIMEOUT_MS = 30000;
+const MAX_RESPONSE_TOKENS = 500;
+const MAX_COMPLETION_TOKENS = 300;
+
+const sumUsage = (totals, usage) => ({
+  prompt_tokens: totals.prompt_tokens + (usage?.prompt_tokens || 0),
+  completion_tokens: totals.completion_tokens + (usage?.completion_tokens || 0),
+  total_tokens: totals.total_tokens + (usage?.total_tokens || 0),
+});
 
 const tools = [
   {
@@ -184,11 +192,9 @@ const tools = [
 ];
 
 
-const generateOpenAIResponse = async (prompt, toolContext = {}) => {
-  const messages = [
-    { role: "system", content: prompt.systemPrompt },
-    { role: "user", content: prompt.userPrompt },
-  ];
+const generateOpenAIResponse = async (inputMessages, toolContext = {}) => {
+  const messages = [...inputMessages];
+  let usage = { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 };
 
   for (let round = 0; round < MAX_TOOL_ROUNDS; round += 1) {
     let response;
@@ -202,6 +208,7 @@ const generateOpenAIResponse = async (prompt, toolContext = {}) => {
               tools,
               tool_choice: "auto",
               temperature: 0.3,
+              max_completion_tokens: MAX_RESPONSE_TOKENS,
             },
             { signal }
           ),
@@ -212,11 +219,13 @@ const generateOpenAIResponse = async (prompt, toolContext = {}) => {
       throw e;
     }
 
+    usage = sumUsage(usage, response.usage);
+
     const message = response.choices[0].message;
     const toolCalls = message.tool_calls || [];
 
     if (toolCalls.length === 0) {
-      return message.content || "";
+      return { content: message.content || "", usage };
     }
 
     messages.push({
@@ -263,7 +272,34 @@ const generateOpenAIResponse = async (prompt, toolContext = {}) => {
   }
 
   console.log({ rounds: MAX_TOOL_ROUNDS }, "Exhausted tool rounds")
-  return "I could not finish that request because too many tool calls were needed. Please ask a narrower question.";
+  return {
+    content: "I could not finish that request because too many tool calls were needed. Please ask a narrower question.",
+    usage,
+  };
 }
 
+const completeOpenAI = async (messages, { json = false } = {}) => {
+  const response = await withTimeout(
+    (signal) =>
+      client.chat.completions.create(
+        {
+          model: "gpt-4o-mini",
+          messages,
+          temperature: 0.2,
+          max_completion_tokens: MAX_COMPLETION_TOKENS,
+          ...(json ? { response_format: { type: "json_object" } } : {}),
+        },
+        { signal }
+      ),
+    TOOL_TIMEOUT_MS,
+    "OpenAI completion call"
+  );
+
+  return {
+    content: response.choices[0].message.content || "",
+    usage: sumUsage({ prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 }, response.usage),
+  };
+};
+
 export default generateOpenAIResponse;
+export { completeOpenAI };
