@@ -1,17 +1,18 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { Suspense, lazy, useState, useRef, useEffect } from 'react';
 import { Leaf, SlidersHorizontal, Plus, Target, Flame, Trash2, User, History, LogOut, Sparkles, Sunrise, Sun, Moon, Apple } from 'lucide-react';
 import SaladIcon from './assets/icons/SaladIcon';
 import './css/App.css';
 import './css/AIChatbot.css';
-import LogFoodModal from './LogFoodModal';
-import HistoryModal from './HistoryModal';
-import AIChatbot from './AIChatbot';
-import SubscriptionModal from './SubscriptionModal';
 import supabase from '../core/supabaseClient';
 import { usePayment } from './hooks/usePayment';
 import LoadingScreen from './LoadingScreen';
 import { toast } from 'react-toastify';
 import { MEAL_TYPES } from '../utils/constant';
+
+const LogFoodModal = lazy(() => import('./LogFoodModal'));
+const HistoryModal = lazy(() => import('./HistoryModal'));
+const AIChatbot = lazy(() => import('./AIChatbot'));
+const SubscriptionModal = lazy(() => import('./SubscriptionModal'));
 
 const MEAL_ICONS = {
   Breakfast: Sunrise,
@@ -372,15 +373,17 @@ const Dashboard = ({ user, session }) => {
       <button className="fab" onClick={() => setShowLogFood(true)}><Plus size={24} /> Add Food</button>
       <div style={{ height: '100px' }}></div>
 
-      {showLogFood && <LogFoodModal user={user} onClose={() => setShowLogFood(false)} onAdd={handleAddFood} />}
+      <Suspense fallback={null}>
+        {showLogFood && <LogFoodModal user={user} onClose={() => setShowLogFood(false)} onAdd={handleAddFood} />}
 
-      {showAIChat && (
-        <AIChatbot
-          user={user}
-          session={session}
-          onClose={() => setShowAIChat(false)}
-        />
-      )}
+        {showAIChat && (
+          <AIChatbot
+            user={user}
+            session={session}
+            onClose={() => setShowAIChat(false)}
+          />
+        )}
+      </Suspense>
 
       {pendingTarget !== null && (
         <div className="modal-overlay fade-in">
@@ -407,20 +410,22 @@ const Dashboard = ({ user, session }) => {
         </div>
       )}
 
-      {showHistory && <HistoryModal user={user} onClose={() => setShowHistory(false)} />}
+      <Suspense fallback={null}>
+        {showHistory && <HistoryModal user={user} onClose={() => setShowHistory(false)} />}
+
+        {showSubscriptionModal && (
+          <SubscriptionModal
+            onClose={() => setShowSubscriptionModal(false)}
+            onUpgrade={async (plan) => {
+              if (error) toast.error(error)
+              pay(plan)
+              setShowSubscriptionModal(false);
+            }}
+          />
+        )}
+      </Suspense>
 
       {loadingPayment && <LoadingScreen />}
-
-      {showSubscriptionModal && (
-        <SubscriptionModal
-          onClose={() => setShowSubscriptionModal(false)}
-          onUpgrade={async (plan) => {
-            if (error) toast.error(error)
-            pay(plan)
-            setShowSubscriptionModal(false);
-          }}
-        />
-      )}
     </div>
   );
 };

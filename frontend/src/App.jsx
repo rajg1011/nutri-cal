@@ -1,13 +1,14 @@
-import { useState, useEffect } from 'react';
+import { Suspense, lazy, useState, useEffect } from 'react';
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
  import { ToastContainer } from 'react-toastify';
 import supabase from '../core/supabaseClient';
-import Login from './Login';
-import Dashboard from './Dashboard';
 import LoadingScreen from './LoadingScreen';
-import ProfileOnboarding from './ProfileOnboarding';
 import InstallAppPrompt from './InstallAppPrompt';
 import './css/App.css';
+
+const Login = lazy(() => import('./Login'));
+const Dashboard = lazy(() => import('./Dashboard'));
+const ProfileOnboarding = lazy(() => import('./ProfileOnboarding'));
 
 
 const ProtectedRoute = ({ user, loading, children }) => {
@@ -129,6 +130,7 @@ function App() {
 
   return (
     <>
+    <Suspense fallback={<LoadingScreen />}>
     <Routes>
 
       <Route
@@ -160,6 +162,7 @@ function App() {
         }
       />
     </Routes>
+    </Suspense>
      <InstallAppPrompt />
      <ToastContainer position="top-center" autoClose={2000} />
     </>
