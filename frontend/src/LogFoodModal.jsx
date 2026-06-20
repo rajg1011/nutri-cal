@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Search, ChevronLeft, ChevronRight, Flame, Bookmark, BookmarkCheck, Sunrise, Sun, Moon, Apple, Star, Database, Pencil } from 'lucide-react';
 import supabase from '../core/supabaseClient';
 import { MEAL_TYPES, MEAL_UNITS, MEAL_UNIT_HINTS } from '../utils/constant';
@@ -26,6 +27,8 @@ const LogFoodModal = ({ user, onClose, onAdd }) => {
   const [prefUnit, setPrefUnit] = useState('Katori');
   const [isPrefLoading, setIsPrefLoading] = useState(false);
   const [isEditingSelected, setIsEditingSelected] = useState(false);
+  const [dropdownPosition, setDropdownPosition] = useState(null);
+  const searchWrapperRef = useRef(null);
 
   const units = MEAL_UNITS;
   const unitHint = (unit) => {
@@ -81,6 +84,38 @@ const LogFoodModal = ({ user, onClose, onAdd }) => {
 
     return () => clearTimeout(delayDebounceFn);
   }, [foodSearch, selectedFood, user]);
+
+  const showDropdown = !selectedFood && (isSearching || searchResults.length > 0);
+
+  useEffect(() => {
+    if (!showDropdown) {
+      setDropdownPosition(null);
+      return;
+    }
+
+    const updatePosition = () => {
+      const el = searchWrapperRef.current;
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const openUpward = spaceBelow < 320 && rect.top > spaceBelow;
+      setDropdownPosition({
+        left: rect.left,
+        width: rect.width,
+        ...(openUpward
+          ? { bottom: window.innerHeight - rect.top + 12 }
+          : { top: rect.bottom + 12 }),
+      });
+    };
+
+    updatePosition();
+    window.addEventListener('scroll', updatePosition, true);
+    window.addEventListener('resize', updatePosition);
+    return () => {
+      window.removeEventListener('scroll', updatePosition, true);
+      window.removeEventListener('resize', updatePosition);
+    };
+  }, [showDropdown]);
 
   const handleAddSubmit = async () => {
     if (!isFormValid) return;
@@ -236,7 +271,7 @@ const LogFoodModal = ({ user, onClose, onAdd }) => {
           <div className="section">
             <label className="section-label">WHAT DID YOU EAT?</label>
             {!selectedFood ? (
-              <div className="search-input-wrapper">
+              <div className="search-input-wrapper" ref={searchWrapperRef}>
                 <Search size={18} className="search-icon" />
                 <input
                   type="text"
@@ -245,8 +280,8 @@ const LogFoodModal = ({ user, onClose, onAdd }) => {
                   onChange={(e) => setFoodSearch(e.target.value)}
                   className="modal-input search-input"
                 />
-                {(isSearching || searchResults.length > 0) && (
-                  <div className="search-results-dropdown">
+                {showDropdown && dropdownPosition && createPortal(
+                  <div className="search-results-dropdown" style={dropdownPosition}>
                     {isSearching ? (
                       <div className="search-loading">Searching Food...</div>
                     ) : (
@@ -270,7 +305,8 @@ const LogFoodModal = ({ user, onClose, onAdd }) => {
                         </div>
                       ))
                     )}
-                  </div>
+                  </div>,
+                  document.body
                 )}
               </div>
             ) : (
@@ -311,6 +347,7 @@ const LogFoodModal = ({ user, onClose, onAdd }) => {
                     setFoodError(null);
                   }}
                   className="modal-input"
+                  disabled={searchResults.length > 0}
                 />
                 {foodError && <div className="food-error-message">{foodError}</div>}
               </div>

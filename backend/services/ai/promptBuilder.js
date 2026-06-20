@@ -33,6 +33,9 @@ const promptBuilderforChatbot = () => {
   - Prefer simple Indian diet suggestions when relevant
   - Do not guess user-specific nutrition data. Call tools first, then answer from tool results.
   - If a tool returns an error, explain the issue briefly and ask for the missing detail.
+  - If asked for a nutrition value (e.g. calories, protein, sugar) that is not returned by a tool or
+    present in the provided context, do not invent a number. Say you're not certain and give a rough
+    estimate only if useful, clearly labeled as an estimate, not a tracked/verified value.
 
   UNIT SIZE REFERENCE (use these exact size assumptions when logging a meal with log_meal,
   so calorie estimates stay consistent with what the app shows users for each unit):

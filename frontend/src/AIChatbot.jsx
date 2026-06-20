@@ -254,6 +254,7 @@ const AIChatbot = ({ user, session, onClose }) => {
               <Send size={18} />
             </button>
           </div>
+          <p className="ai-chat-disclaimer">AI may be wrong, use carefully.</p>
         </div>
       </div>
     </div>
