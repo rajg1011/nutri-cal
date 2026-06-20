@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { X, Search, ChevronLeft, ChevronRight, Flame, Bookmark, BookmarkCheck, Sunrise, Sun, Moon, Apple, Star, Database, Pencil } from 'lucide-react';
 import supabase from '../core/supabaseClient';
-import { MEAL_TYPES, MEAL_UNITS } from '../utils/constant';
+import { MEAL_TYPES, MEAL_UNITS, MEAL_UNIT_HINTS } from '../utils/constant';
 import LoadingScreen from './LoadingScreen';
 import './css/LogFoodModal.css';
 import useScrollLock from './hooks/useScrollLock';
@@ -28,6 +28,13 @@ const LogFoodModal = ({ user, onClose, onAdd }) => {
   const [isEditingSelected, setIsEditingSelected] = useState(false);
 
   const units = MEAL_UNITS;
+  const unitHint = (unit) => {
+    if (!unit) return undefined;
+    const key = Object.keys(MEAL_UNIT_HINTS).find(
+      (u) => u.toLowerCase() === unit.toLowerCase()
+    );
+    return key ? MEAL_UNIT_HINTS[key] : undefined;
+  };
 
   const isFormValid = selectedFood || (foodSearch.trim().length > 0 && calories.trim().length > 0);
 
@@ -256,6 +263,9 @@ const LogFoodModal = ({ user, onClose, onAdd }) => {
                           <div className="result-stats">
                             <div className="result-calories">{result.caloriesPerUnit} kcal</div>
                             <div className="result-unit">per {result.unit || 'serving'}</div>
+                            {unitHint(result.unit) && (
+                              <div className="result-unit-hint">{unitHint(result.unit)}</div>
+                            )}
                           </div>
                         </div>
                       ))
@@ -267,7 +277,12 @@ const LogFoodModal = ({ user, onClose, onAdd }) => {
               <div className="selected-item-card">
                 <div className="selected-info">
                   <div className="selected-name">{selectedFood.name}</div>
-                  <div className="selected-subtitle">{selectedFood.caloriesPerUnit} kcal per {selectedFood.unit}</div>
+                  <div className="selected-subtitle">
+                    {selectedFood.caloriesPerUnit} kcal per {selectedFood.unit}
+                    {unitHint(selectedFood.unit) && (
+                      <span className="unit-hint-badge">{unitHint(selectedFood.unit)}</span>
+                    )}
+                  </div>
                 </div>
                 <div className="selected-actions">
                   {!selectedFood.isPreference && !isEditingSelected && (
@@ -345,7 +360,11 @@ const LogFoodModal = ({ user, onClose, onAdd }) => {
                         value={prefUnit}
                         onChange={(e) => setPrefUnit(e.target.value)}
                       >
-                        {units.map(u => <option key={u} value={u}>{u}</option>)}
+                        {units.map(u => (
+                          <option key={u} value={u}>
+                            {u}{unitHint(u) ? ` (${unitHint(u)})` : ''}
+                          </option>
+                        ))}
                       </select>
                     </div>
                   </div>
@@ -410,7 +429,11 @@ const LogFoodModal = ({ user, onClose, onAdd }) => {
                         value={prefUnit}
                         onChange={(e) => setPrefUnit(e.target.value)}
                       >
-                        {units.map(u => <option key={u} value={u}>{u}</option>)}
+                        {units.map(u => (
+                          <option key={u} value={u}>
+                            {u}{unitHint(u) ? ` (${unitHint(u)})` : ''}
+                          </option>
+                        ))}
                       </select>
                     </div>
                   </div>
@@ -449,7 +472,12 @@ const LogFoodModal = ({ user, onClose, onAdd }) => {
               ) : (
                 <>
                   <div className="quantity-section">
-                    <label className="section-label">QUANTITY</label>
+                    <label className="section-label">
+                      QUANTITY
+                      {unitHint(selectedFood.unit) && (
+                        <span className="quantity-unit-hint">1 {selectedFood.unit} &asymp; {unitHint(selectedFood.unit)}</span>
+                      )}
+                    </label>
                     <div className="quantity-control">
                       <button className="q-btn" onClick={() => adjustQuantity(-0.5)}>
                         <ChevronLeft size={20} />

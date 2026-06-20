@@ -296,6 +296,14 @@
   margin-top: 1px;
 }
 
+.result-unit-hint {
+  font-size: 10.5px;
+  color: #9baaa3;
+  font-weight: 500;
+  text-transform: none;
+  margin-top: 2px;
+}
+
 /* Selected Food View */
 .selected-food-view {
   display: flex;
@@ -331,6 +339,18 @@
   font-size: 13px;
   color: var(--text-secondary);
   font-weight: 500;
+}
+
+.unit-hint-badge {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 6px;
+  padding: 1px 8px;
+  background-color: #e6f7ec;
+  color: var(--primary-green);
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 700;
 }
 
 .selected-actions {
@@ -369,6 +389,20 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+.quantity-section .section-label {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.quantity-unit-hint {
+  font-size: 11px;
+  font-weight: 600;
+  color: #9baaa3;
+  letter-spacing: 0;
+  text-transform: none;
 }
 
 .quantity-control {
