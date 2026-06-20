@@ -1,5 +1,22 @@
 .history-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--modal-overlay);
+  display: flex;
+  justify-content: center;
+  align-items: center;
   z-index: 1000;
+  padding: 16px;
+  overflow-y: auto;
+}
+
+@media (min-width: 480px) {
+  .history-overlay {
+    padding: 20px;
+  }
 }
 
 .history-modal-container {

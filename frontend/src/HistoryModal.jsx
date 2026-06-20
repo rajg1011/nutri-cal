@@ -86,7 +86,7 @@ const HistoryModal = ({ user, onClose }) => {
   };
 
   return (
-    <div className="modal-overlay form-fade-in history-overlay">
+    <div className="history-overlay">
       <div className="history-modal-container">
         <div className="history-header">
           <div className="history-title">

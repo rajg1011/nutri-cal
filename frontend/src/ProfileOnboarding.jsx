@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   ArrowLeft,
   ArrowRight,
@@ -16,6 +16,7 @@ import {
   User,
   Venus,
   VenusAndMars,
+  X,
   Zap,
 } from 'lucide-react';
 import supabase from '../core/supabaseClient';
@@ -81,12 +82,19 @@ const formatGoalsForDb = (goals) => {
   return `${goals.slice(0, -1).join(', ')} and ${goals.at(-1)}`;
 };
 
-const ProfileOnboarding = ({ user, onComplete }) => {
+const parseGoalsFromDb = (goalString) => {
+  if (!goalString) return [];
+  return GOALS.map(goal => goal.value).filter(value => goalString.includes(value));
+};
+
+const ProfileOnboarding = ({ user, onComplete, onClose }) => {
+  const isEditing = Boolean(onClose);
   const [step, setStep] = useState(1);
   const [profile, setProfile] = useState(() => ({
     ...INITIAL_PROFILE,
     name: getUserDisplayName(user),
   }));
+  const [isLoadingProfile, setIsLoadingProfile] = useState(isEditing);
   const [fieldErrors, setFieldErrors] = useState({});
   const [submitError, setSubmitError] = useState('');
   const [isSaving, setIsSaving] = useState(false);
@@ -96,6 +104,45 @@ const ProfileOnboarding = ({ user, onComplete }) => {
   const displayName = useMemo(() => {
     return getUserDisplayName(user);
   }, [user]);
+
+  useEffect(() => {
+    if (!isEditing) return;
+    let isMounted = true;
+
+    const loadExistingProfile = async () => {
+      const { data, error } = await supabase
+        .from('userProfile')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (!isMounted) return;
+
+      if (error) {
+        console.error('Error loading user profile:', error);
+        setSubmitError('Could not load your profile. Please try again.');
+      } else if (data) {
+        setProfile({
+          name: data.name || getUserDisplayName(user),
+          gender: data.gender || INITIAL_PROFILE.gender,
+          age: data.age != null ? String(data.age) : '',
+          height: data.height != null ? String(data.height) : '',
+          weight: data.weight != null ? String(data.weight) : '',
+          dietType: data.dietType || INITIAL_PROFILE.dietType,
+          goal: parseGoalsFromDb(data.goal).length ? parseGoalsFromDb(data.goal) : INITIAL_PROFILE.goal,
+          activityLevel: data.activityLevel || INITIAL_PROFILE.activityLevel,
+        });
+      }
+
+      setIsLoadingProfile(false);
+    };
+
+    loadExistingProfile();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isEditing, user.id]);
 
   useScrollLock();
 
@@ -179,24 +226,25 @@ const ProfileOnboarding = ({ user, onComplete }) => {
     setFieldErrors({});
     setSubmitError('');
 
-    const { error: insertError } = await supabase
-      .from('userProfile')
-      .insert({
-        user_id: user.id,
-        name: profile.name.trim(),
-        height: Number(profile.height),
-        weight: Number(profile.weight),
-        age: Number(profile.age),
-        gender: profile.gender,
-        dietType: profile.dietType,
-        activityLevel: profile.activityLevel,
-        goal: formatGoalsForDb(profile.goal),
-      });
+    const profilePayload = {
+      name: profile.name.trim(),
+      height: Number(profile.height),
+      weight: Number(profile.weight),
+      age: Number(profile.age),
+      gender: profile.gender,
+      dietType: profile.dietType,
+      activityLevel: profile.activityLevel,
+      goal: formatGoalsForDb(profile.goal),
+    };
+
+    const { error: saveError } = isEditing
+      ? await supabase.from('userProfile').update(profilePayload).eq('user_id', user.id)
+      : await supabase.from('userProfile').insert({ user_id: user.id, ...profilePayload });
 
     setIsSaving(false);
 
-    if (insertError) {
-      console.error('Error saving user profile:', insertError);
+    if (saveError) {
+      console.error('Error saving user profile:', saveError);
       setSubmitError('Could not save your profile. Please try again.');
       return;
     }
@@ -205,12 +253,17 @@ const ProfileOnboarding = ({ user, onComplete }) => {
   };
 
   return (
-    <div className="modal-overlay profile-modal-overlay">
-      <section className="modal-content profile-modal-content">
+    <div className="profile-modal-overlay">
+      <section className="profile-modal-content">
         <div className="profile-accent" />
 
         <header className="profile-header">
-          <h1>Set Up Your Profile</h1>
+          {onClose && (
+            <button className="profile-close-btn" type="button" onClick={onClose} aria-label="Close">
+              <X size={20} />
+            </button>
+          )}
+          <h1>{isEditing ? 'Edit Your Profile' : 'Set Up Your Profile'}</h1>
           <p>{progressLabel}</p>
           <div className="profile-progress" aria-hidden="true">
             <span className="active" />
@@ -218,7 +271,9 @@ const ProfileOnboarding = ({ user, onComplete }) => {
           </div>
         </header>
 
-        {step === 1 ? (
+        {isLoadingProfile ? (
+          <div className="profile-loading">Loading your profile...</div>
+        ) : step === 1 ? (
           <div className="profile-content">
             <div className="profile-field">
               <label htmlFor="profile-name">
@@ -406,23 +461,25 @@ const ProfileOnboarding = ({ user, onComplete }) => {
 
         {submitError && <div className="profile-error">{submitError}</div>}
 
-        <footer className="profile-actions">
-          {step === 2 && (
-            <button className="profile-secondary-btn" type="button" onClick={() => setStep(1)} disabled={isSaving}>
-              <ArrowLeft size={22} />
-              Back
+        {!isLoadingProfile && (
+          <footer className="profile-actions">
+            {step === 2 && (
+              <button className="profile-secondary-btn" type="button" onClick={() => setStep(1)} disabled={isSaving}>
+                <ArrowLeft size={22} />
+                Back
+              </button>
+            )}
+            <button
+              className="profile-primary-btn"
+              type="button"
+              onClick={step === 1 ? handleContinue : handleSubmit}
+              disabled={isSaving}
+            >
+              {step === 1 ? 'Continue' : isSaving ? 'Saving...' : isEditing ? 'Save Changes' : 'Get Started'}
+              {step === 1 ? <ArrowRight size={22} /> : <Dumbbell size={20} />}
             </button>
-          )}
-          <button
-            className="profile-primary-btn"
-            type="button"
-            onClick={step === 1 ? handleContinue : handleSubmit}
-            disabled={isSaving}
-          >
-            {step === 1 ? 'Continue' : isSaving ? 'Saving...' : 'Get Started'}
-            {step === 1 ? <ArrowRight size={22} /> : <Dumbbell size={20} />}
-          </button>
-        </footer>
+          </footer>
+        )}
       </section>
     </div>
   );

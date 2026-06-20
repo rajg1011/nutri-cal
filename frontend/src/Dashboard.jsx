@@ -1,5 +1,5 @@
 import React, { Suspense, lazy, useState, useRef, useEffect } from 'react';
-import { Leaf, SlidersHorizontal, Plus, Target, Flame, Trash2, User, History, LogOut, Sparkles, Sunrise, Sun, Moon, Apple } from 'lucide-react';
+import { Leaf, SlidersHorizontal, Plus, Target, Flame, Trash2, User, History, LogOut, Sparkles, Sunrise, Sun, Moon, Apple, Pencil } from 'lucide-react';
 import SaladIcon from './assets/icons/SaladIcon';
 import './css/App.css';
 import './css/AIChatbot.css';
@@ -13,6 +13,7 @@ const LogFoodModal = lazy(() => import('./LogFoodModal'));
 const HistoryModal = lazy(() => import('./HistoryModal'));
 const AIChatbot = lazy(() => import('./AIChatbot'));
 const SubscriptionModal = lazy(() => import('./SubscriptionModal'));
+const ProfileOnboarding = lazy(() => import('./ProfileOnboarding'));
 
 const MEAL_ICONS = {
   Breakfast: Sunrise,
@@ -25,6 +26,7 @@ const Dashboard = ({ user, session }) => {
   const [showLogFood, setShowLogFood] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [showEditProfile, setShowEditProfile] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef(null);
   const [dailyTarget, setDailyTarget] = useState(2000);
@@ -220,8 +222,13 @@ const Dashboard = ({ user, session }) => {
     setShowDropdown(false);
     setSigningOut(true);
     try {
-      await supabase.auth.signOut();
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        toast.error("Something Went Wrong");
+        setSigningOut(false);
+      }
     } catch {
+      toast.error("Something Went Wrong");
       setSigningOut(false);
     }
   };
@@ -231,8 +238,6 @@ const Dashboard = ({ user, session }) => {
     const mealLogs = logs.filter(l => l.meal === meal);
     return { meal, logs: mealLogs, total: mealLogs.reduce((acc, l) => acc + l.calories, 0) };
   }).filter(group => group.logs.length > 0);
-
-  if (signingOut) return <LoadingScreen />;
 
   return (
     <div className="app-container fade-in">
@@ -273,6 +278,9 @@ const Dashboard = ({ user, session }) => {
               <div className="dropdown-menu fade-in">
                 <button className="dropdown-item" onClick={() => { setShowHistory(true); setShowDropdown(false); }}>
                   <History size={15} /> History
+                </button>
+                <button className="dropdown-item" onClick={() => { setShowEditProfile(true); setShowDropdown(false); }}>
+                  <Pencil size={15} /> Edit Profile
                 </button>
                 <button className="dropdown-item danger" onClick={handleSignOut}>
                   <LogOut size={15} /> Sign Out
@@ -397,7 +405,7 @@ const Dashboard = ({ user, session }) => {
       </Suspense>
 
       {pendingTarget !== null && (
-        <div className="modal-overlay fade-in">
+        <div className="confirm-overlay fade-in">
           <div className="confirm-modal">
             <h3 className="confirm-title">Update Goal?</h3>
             <p className="confirm-desc">Changing your daily goal will recalculate your progress graph and remaining calories.</p>
@@ -410,7 +418,7 @@ const Dashboard = ({ user, session }) => {
       )}
 
       {targetError !== null && (
-        <div className="modal-overlay fade-in" style={{ zIndex: 1100 }}>
+        <div className="confirm-overlay fade-in" style={{ zIndex: 1100 }}>
           <div className="confirm-modal">
             <h3 className="confirm-title" style={{ color: '#e53e3e' }}>Invalid Goal</h3>
             <p className="confirm-desc">{targetError}</p>
@@ -423,6 +431,17 @@ const Dashboard = ({ user, session }) => {
 
       <Suspense fallback={null}>
         {showHistory && <HistoryModal user={user} onClose={() => setShowHistory(false)} />}
+
+        {showEditProfile && (
+          <ProfileOnboarding
+            user={user}
+            onClose={() => setShowEditProfile(false)}
+            onComplete={() => {
+              setShowEditProfile(false);
+              toast.success('Profile updated');
+            }}
+          />
+        )}
 
         {showSubscriptionModal && (
           <SubscriptionModal
@@ -437,6 +456,7 @@ const Dashboard = ({ user, session }) => {
       </Suspense>
 
       {loadingPayment && <LoadingScreen />}
+      {signingOut && <LoadingScreen />}
     </div>
   );
 };
