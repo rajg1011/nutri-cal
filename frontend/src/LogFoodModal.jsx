@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Search, ChevronLeft, ChevronRight, Flame, Bookmark, BookmarkCheck, Sunrise, Sun, Moon, Apple, Star, Database } from 'lucide-react';
+import { X, Search, ChevronLeft, ChevronRight, Flame, Bookmark, BookmarkCheck, Sunrise, Sun, Moon, Apple, Star, Database, Pencil } from 'lucide-react';
 import supabase from '../core/supabaseClient';
 import { MEAL_TYPES, MEAL_UNITS } from '../utils/constant';
 import LoadingScreen from './LoadingScreen';
@@ -25,6 +25,7 @@ const LogFoodModal = ({ user, onClose, onAdd }) => {
   const [prefProtein, setPrefProtein] = useState('');
   const [prefUnit, setPrefUnit] = useState('Katori');
   const [isPrefLoading, setIsPrefLoading] = useState(false);
+  const [isEditingSelected, setIsEditingSelected] = useState(false);
 
   const units = MEAL_UNITS;
 
@@ -134,6 +135,15 @@ const LogFoodModal = ({ user, onClose, onAdd }) => {
     setSelectedFood(null);
     setFoodSearch('');
     setQuantity(1);
+    setIsEditingSelected(false);
+  };
+
+  const handleStartEdit = () => {
+    setPrefName(selectedFood.name);
+    setPrefCalories(String(selectedFood.caloriesPerUnit ?? ''));
+    setPrefProtein(selectedFood.proteinPerUnit ? String(selectedFood.proteinPerUnit) : '');
+    setPrefUnit(selectedFood.unit || 'Katori');
+    setIsEditingSelected(true);
   };
 
   const adjustQuantity = (amount) => {
@@ -170,6 +180,7 @@ const LogFoodModal = ({ user, onClose, onAdd }) => {
       };
       handleSelectFood(savedFood);
       setIsSavingPreference(false);
+      setIsEditingSelected(false);
     } catch (err) {
       console.error('Error saving preference:', err);
       alert('Failed to save to my foods');
@@ -258,9 +269,16 @@ const LogFoodModal = ({ user, onClose, onAdd }) => {
                   <div className="selected-name">{selectedFood.name}</div>
                   <div className="selected-subtitle">{selectedFood.caloriesPerUnit} kcal per {selectedFood.unit}</div>
                 </div>
-                <button className="deselect-btn" onClick={handleDeselect}>
-                  <X size={18} />
-                </button>
+                <div className="selected-actions">
+                  {!selectedFood.isPreference && !isEditingSelected && (
+                    <button className="edit-btn" onClick={handleStartEdit} title="Edit & save to my foods">
+                      <Pencil size={16} />
+                    </button>
+                  )}
+                  <button className="deselect-btn" onClick={handleDeselect}>
+                    <X size={18} />
+                  </button>
+                </div>
               </div>
             )}
           </div>
@@ -349,46 +367,122 @@ const LogFoodModal = ({ user, onClose, onAdd }) => {
                     onClick={handleSaveToMyFoods}
                     disabled={!prefName || !prefCalories || isPrefLoading}
                   >
-                    {isPrefLoading ? 'Saving...' : `Save "${prefName || 'food'}" to my foods`}
+                    {isPrefLoading ? (
+                      'Saving...'
+                    ) : (
+                      <>
+                        Save "<span className="save-pref-btn-name">{prefName || 'food'}</span>" to my foods
+                      </>
+                    )}
                   </button>
                 </div>
               )}
             </>
           ) : (
             <div className="selected-food-view">
-              <div className="quantity-section">
-                <label className="section-label">QUANTITY</label>
-                <div className="quantity-control">
-                  <button className="q-btn" onClick={() => adjustQuantity(-0.5)}>
-                    <ChevronLeft size={20} />
-                  </button>
-                  <div className="q-value-display">
-                    <input 
-                      type="number" 
-                      className="q-number-input" 
-                      value={quantity} 
-                      onChange={(e) => setQuantity(e.target.value === '' ? '' : parseFloat(e.target.value))}
-                      onBlur={() => {
-                        if (quantity === '' || quantity < 0.5) setQuantity(0.5);
-                      }}
-                      step="0.5"
-                      min="0.5"
-                    />
-                    <span className="q-unit">{selectedFood.unit}</span>
-                  </div>
-                  <button className="q-btn" onClick={() => adjustQuantity(0.5)}>
-                    <ChevronRight size={20} />
-                  </button>
-                </div>
-              </div>
+              {isEditingSelected ? (
+                <div className="preference-form-card fade-in">
+                  <div className="pref-card-title">Edit & save to my foods</div>
 
-              <div className="total-calories-display">
-                <div className="total-cal-val">
-                  <Flame size={18} fill="var(--primary-green)" />
-                  {Math.round(selectedFood.caloriesPerUnit * quantity)}
+                  <div className="pref-input-group">
+                    <label className="pref-label">Food name</label>
+                    <input
+                      className="pref-input"
+                      value={prefName}
+                      onChange={(e) => setPrefName(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="pref-row">
+                    <div className="pref-input-group">
+                      <label className="pref-label">Calories per unit</label>
+                      <input
+                        type="number"
+                        className="pref-input"
+                        value={prefCalories}
+                        onChange={(e) => setPrefCalories(e.target.value)}
+                      />
+                    </div>
+                    <div className="pref-input-group">
+                      <label className="pref-label">Unit</label>
+                      <select
+                        className="pref-input"
+                        value={prefUnit}
+                        onChange={(e) => setPrefUnit(e.target.value)}
+                      >
+                        {units.map(u => <option key={u} value={u}>{u}</option>)}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="pref-input-group">
+                    <label className="pref-label">Protein per unit (g)</label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      className="pref-input"
+                      value={prefProtein}
+                      onChange={(e) => setPrefProtein(e.target.value)}
+                      placeholder="e.g. 1.2"
+                    />
+                  </div>
+
+                  <div className="pref-edit-actions">
+                    <button className="cancel-edit-btn" onClick={() => setIsEditingSelected(false)}>
+                      Cancel
+                    </button>
+                    <button
+                      className="save-pref-btn"
+                      onClick={handleSaveToMyFoods}
+                      disabled={!prefName || !prefCalories || isPrefLoading}
+                    >
+                      {isPrefLoading ? (
+                        'Saving...'
+                      ) : (
+                        <>
+                          Save "<span className="save-pref-btn-name">{prefName || 'food'}</span>" to my foods
+                        </>
+                      )}
+                    </button>
+                  </div>
                 </div>
-                <div className="total-cal-lbl">kcal total</div>
-              </div>
+              ) : (
+                <>
+                  <div className="quantity-section">
+                    <label className="section-label">QUANTITY</label>
+                    <div className="quantity-control">
+                      <button className="q-btn" onClick={() => adjustQuantity(-0.5)}>
+                        <ChevronLeft size={20} />
+                      </button>
+                      <div className="q-value-display">
+                        <input
+                          type="number"
+                          className="q-number-input"
+                          value={quantity}
+                          onChange={(e) => setQuantity(e.target.value === '' ? '' : parseFloat(e.target.value))}
+                          onBlur={() => {
+                            if (quantity === '' || quantity < 0.5) setQuantity(0.5);
+                          }}
+                          step="0.5"
+                          min="0.5"
+                        />
+                        <span className="q-unit">{selectedFood.unit}</span>
+                      </div>
+                      <button className="q-btn" onClick={() => adjustQuantity(0.5)}>
+                        <ChevronRight size={20} />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="total-calories-display">
+                    <div className="total-cal-val">
+                      <Flame size={18} fill="var(--primary-green)" />
+                      {Math.round(selectedFood.caloriesPerUnit * quantity)}
+                    </div>
+                    <div className="total-cal-lbl">kcal total</div>
+                  </div>
+                </>
+              )}
             </div>
           )}
 
