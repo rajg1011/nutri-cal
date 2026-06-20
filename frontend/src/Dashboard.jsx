@@ -38,6 +38,7 @@ const Dashboard = ({ user, session }) => {
   const { pay, error, isLoading: loadingPayment } = usePayment({ user, session })
   const [logs, setLogs] = useState([]);
   const [signingOut, setSigningOut] = useState(false);
+  const [isSyncingAfterAI, setIsSyncingAfterAI] = useState(false);
 
   const consumed = logs.reduce((acc, log) => acc + log.calories, 0);
   const totalProtein = logs.reduce((acc, log) => acc + (parseFloat(log.protein) || 0), 0);
@@ -112,6 +113,16 @@ const Dashboard = ({ user, session }) => {
   const handleAddFood = () => {
     fetchLogs();
     setShowLogFood(false);
+  };
+
+  const handleAIChatClose = async () => {
+    setShowAIChat(false);
+    setIsSyncingAfterAI(true);
+    try {
+      await Promise.all([fetchLogs(), fetchDailyGoal()]);
+    } finally {
+      setIsSyncingAfterAI(false);
+    }
   };
 
   const handleDeleteFood = async (id) => {
@@ -285,7 +296,7 @@ const Dashboard = ({ user, session }) => {
         </div>
       )}
 
-      <div className={`progress-container ${isRecalculating ? 'recalculating' : ''}`}>
+      <div className={`progress-container ${(isRecalculating || isSyncingAfterAI) ? 'recalculating' : ''}`}>
         <div className="svg-wrapper">
           <svg viewBox={`0 0 ${radius * 2} ${radius * 2}`} width="100%" height="100%" style={{ transform: 'rotate(-90deg)' }}>
             <circle stroke="var(--circle-bg)" fill="transparent" strokeWidth={strokeWidth} r={normalizedRadius} cx={radius} cy={radius} />
@@ -304,7 +315,7 @@ const Dashboard = ({ user, session }) => {
         </div>
       </div>
 
-      <div className={`stats-row ${isRecalculating ? 'recalculating' : ''}`}>
+      <div className={`stats-row ${(isRecalculating || isSyncingAfterAI) ? 'recalculating' : ''}`}>
         <div className="stat-card">
           <div className="stat-label"><Target size={14} /> TARGET</div>
           <div className="stat-value">{dailyTarget}</div>
@@ -315,7 +326,7 @@ const Dashboard = ({ user, session }) => {
         </div>
       </div>
 
-      <div className="log-section">
+      <div className={`log-section ${isSyncingAfterAI ? 'recalculating' : ''}`}>
         <div className="log-header">
           <h2>Today's Log</h2>
           <div className="log-header-right">
@@ -380,7 +391,7 @@ const Dashboard = ({ user, session }) => {
           <AIChatbot
             user={user}
             session={session}
-            onClose={() => setShowAIChat(false)}
+            onClose={handleAIChatClose}
           />
         )}
       </Suspense>
