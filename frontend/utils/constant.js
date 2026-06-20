@@ -46,9 +46,9 @@ export const MEAL_UNIT_HINTS = {
     "Teaspoon": "~5g",
     "Slice": "~30g",
     "Scoop": "~30g",
-    "Packet": "check pack label",
+    "Packet": "~50g",
     "Bottle": "~500ml",
-    "Serving": "1 standard serving",
+    "Serving": "~150g",
     "100g": "100 grams",
     "Handful": "~30g"
 };
