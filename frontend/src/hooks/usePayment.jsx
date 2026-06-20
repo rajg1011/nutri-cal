@@ -2,11 +2,11 @@ import { useState } from "react";
 import { useRazorpay } from "react-razorpay";
 import axios from "axios";
 import { toast } from "react-toastify";
-import { SUBSCRIPTION_TYPE } from "../../utils/constant";
+import { SUBSCRIPTION_TYPE_PRO, SUBSCRIPTION_TYPE_QUESTION } from "../../utils/constant";
 
 const createOrder = async (subs, session) => {
     try {
-        const url = subs === "PRO" ? 'plan' : 'order'
+        const url = subs === SUBSCRIPTION_TYPE_PRO ? 'plan' : 'order'
         const { data } = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/payment/${url}`, { subscription: subs }, {
             headers: {
                 Authorization: `Bearer ${session.access_token}`
@@ -69,7 +69,7 @@ export const usePayment = ({ user, session }) => {
                 },
                 handler: async (response) => {
                     setIsProcessing(true);
-                    if(subscription === Object.keys(SUBSCRIPTION_TYPE)?.[1]) await verifyPayment(response, session);
+                    if(subscription === SUBSCRIPTION_TYPE_QUESTION) await verifyPayment(response, session);
                     setIsProcessing(false);
                 },
                 modal: {
@@ -81,7 +81,7 @@ export const usePayment = ({ user, session }) => {
                     color: "#21b86d",
                 }
             }
-            if (subscription === Object.keys(SUBSCRIPTION_TYPE)?.[1]) {
+            if (subscription === SUBSCRIPTION_TYPE_QUESTION) {
                 razorPayOptions.order_id = orderData?.order_id;
                 razorPayOptions.amount= orderData?.amount;
             } else {

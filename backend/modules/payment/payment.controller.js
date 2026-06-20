@@ -1,4 +1,4 @@
-import { SUBSCRIPTION_TYPE, Constants } from "../../constant.js"
+import { SUBSCRIPTION_TYPE, SUBSCRIPTION_TYPE_PRO, SUBSCRIPTION_TYPE_QUESTION, Constants } from "../../constant.js"
 import paymentService from "../../services/paymentGateway/paymentService.js"
 import isSubscriptionActive from "../../utils/subscriptionActive.js"
 import supabaseAdmin from "../../config/supabaseAdmin.js"
@@ -103,9 +103,9 @@ const verifyPaymentController = async (req, res) => {
                 status: "ACTIVE"
             };
 
-            if (purchasedPlan === 'QUESTION') {
+            if (purchasedPlan === SUBSCRIPTION_TYPE_QUESTION) {
                 updatePayload.question_asked = Constants.QUESTION_AKSED;
-            } else if (purchasedPlan === 'PRO') {
+            } else if (purchasedPlan === SUBSCRIPTION_TYPE_PRO) {
                 const futureDate = new Date();
                 futureDate.setMonth(futureDate.getMonth() + 1);
                 updatePayload.end_date = futureDate.toISOString();

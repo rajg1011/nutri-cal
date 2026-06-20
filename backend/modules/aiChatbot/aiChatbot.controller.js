@@ -2,6 +2,7 @@ import aiServiceResponse from "../../services/ai/aiService.js";
 import supabaseAdmin from "../../config/supabaseAdmin.js";
 import { getCache, setCache, deleteCache } from "../../services/cache/cache.js";
 import { Keys, TTL } from "../../utils/cacheKeys.js";
+import { SUBSCRIPTION_TYPE_QUESTION } from "../../constant.js";
 
 const DEFAULT_HISTORY_LIMIT = 10;
 
@@ -18,7 +19,7 @@ const aiChatbotController = async (req, res) => {
       userId: req.user,
     });
     
-    if (req.subscriptionType === 'QUESTION') {
+    if (req.subscriptionType === SUBSCRIPTION_TYPE_QUESTION) {
       const { data: remaining, error } = await supabaseAdmin.rpc('decrement_question_credit', { p_user_id: req.user });
 
       if (error) {

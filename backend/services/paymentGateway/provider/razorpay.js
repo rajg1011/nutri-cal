@@ -1,5 +1,6 @@
 import Razorpay from "razorpay";
 import crypto from "crypto";
+import { SUBSCRIPTION_TYPE_PRO } from "../../../constant.js";
 
 export const razorPay = (() => {
     const razorpay = new Razorpay({
@@ -46,7 +47,7 @@ export const razorPay = (() => {
                     "customer_notify": 1,
                     "notes": {
                         "user_id": user_id,
-                        "subscription": "PRO"
+                        "subscription": SUBSCRIPTION_TYPE_PRO
                     }
                 };
                 const response = await razorpay.subscriptions.create(params)

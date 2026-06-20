@@ -1,7 +1,7 @@
 import OpenAI from "openai";
 import runAiTool from "../runAitools.js";
 import { withTimeout } from "../../../utils/abortReq.js";
-import { validMealTypes } from "../../../constant.js";
+import { validMealTypes, MEAL_UNITS } from "../../../constant.js";
 
 
 const client = new OpenAI({
@@ -130,7 +130,8 @@ const tools = [
           },
           meal_unit: {
             type: "string",
-            description: "Serving unit like piece, bowl, katori, cup, teaspoon, or plate"
+            enum: MEAL_UNITS,
+            description: "Serving unit for the meal"
           },
         },
         required: ["food_item", "meal_type", "calories", "protein", "quantity", "meal_unit"],

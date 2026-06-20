@@ -1,5 +1,5 @@
 import isSubscriptionActive from "../../utils/subscriptionActive.js";
-import { Constants } from "../../constant.js";
+import { Constants, SUBSCRIPTION_TYPE_PRO, SUBSCRIPTION_TYPE_QUESTION } from "../../constant.js";
 import supabaseAdmin from "../../config/supabaseAdmin.js";
 import { razorPayWebhook } from "./provider/razorpay.webhook.js";
 import { deleteCache } from "../cache/cache.js";
@@ -30,9 +30,9 @@ const handlePaymentAuthorizedLogic = async ({ user_id, payment_id, subscription,
                 status: "ACTIVE"
             };
 
-            if (purchasedPlan === 'QUESTION') {
+            if (purchasedPlan === SUBSCRIPTION_TYPE_QUESTION) {
                 updatePayload.question_asked = Constants.QUESTION_AKSED;
-            } else if (purchasedPlan === 'PRO') {
+            } else if (purchasedPlan === SUBSCRIPTION_TYPE_PRO) {
                 const futureDate = new Date();
                 futureDate.setMonth(futureDate.getMonth() + 1);
                 updatePayload.end_date = futureDate.toISOString();
@@ -80,13 +80,13 @@ const handleSubscriptionCharged = async ({ user_id, subscription_id, subscriptio
             status: "ACTIVE"
         };
 
-        if (purchasedPlan === 'QUESTION') {
+        if (purchasedPlan === SUBSCRIPTION_TYPE_QUESTION) {
             if (isSubscriptionActive(existingRows)) {
                 await deleteCache(Keys.userSubscribe(user_id))
                 return true;
             }
             updatePayload.question_asked = Constants.QUESTION_AKSED;
-        } else if (purchasedPlan === 'PRO') {
+        } else if (purchasedPlan === SUBSCRIPTION_TYPE_PRO) {
             const currentEndDate = existing?.end_date ? new Date(existing.end_date) : null;
             const baseDate = currentEndDate && currentEndDate > new Date() ? currentEndDate : new Date();
             baseDate.setMonth(baseDate.getMonth() + 1);

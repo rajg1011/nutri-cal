@@ -11,7 +11,7 @@ import supabase from '../core/supabaseClient';
 import { usePayment } from './hooks/usePayment';
 import LoadingScreen from './LoadingScreen';
 import { toast } from 'react-toastify';
-import { ACTIVE_AI, SUBSCRIPTION_TYPE } from '../utils/constant';
+import { MEAL_TYPES } from '../utils/constant';
 
 const MEAL_ICONS = {
   Breakfast: Sunrise,
@@ -214,7 +214,7 @@ const Dashboard = ({ user, session }) => {
     }
   };
 
-  const mealsList = ['Breakfast', 'Lunch', 'Dinner', 'Snack'];
+  const mealsList = MEAL_TYPES;
   const groupedLogs = mealsList.map(meal => {
     const mealLogs = logs.filter(l => l.meal === meal);
     return { meal, logs: mealLogs, total: mealLogs.reduce((acc, l) => acc + l.calories, 0) };

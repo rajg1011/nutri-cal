@@ -7,12 +7,27 @@ export const SUBSCRIPTION_TYPE = {
     'QUESTION': 49
 }
 
-export const ACTIVE_AI= 'ACTIVE'
-export const STOP_AI= 'STOP'
+export const SUBSCRIPTION_TYPE_PRO = 'PRO';
+export const SUBSCRIPTION_TYPE_QUESTION = 'QUESTION';
 
 export const validMealTypes = [
     "breakfast",
     "lunch",
     "dinner",
     "snack"
+];
+
+export const MEAL_UNITS = [
+    "Piece",
+    "Katori",
+    "Bowl",
+    "Plate",
+    "Glass",
+    "Cup",
+    "Tablespoon",
+    "Teaspoon",
+    "Slice",
+    "Serving",
+    "100g",
+    "Handful"
 ];

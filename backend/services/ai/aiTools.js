@@ -1,4 +1,4 @@
-import { validMealTypes } from "../../constant.js";
+import { validMealTypes, MEAL_UNITS } from "../../constant.js";
 import { Keys, TTL } from "../../utils/cacheKeys.js";
 import { deleteCache, getCache, setCache } from "../cache/cache.js";
 
@@ -220,10 +220,10 @@ async function log_meal({ food_item, meal_type, calories, protein, quantity, mea
         if (!protein) {
             return errorMessage('ARGUMENT_NOT_AVAILABLE', 'Provide Protein provided by food')
         }
-        if (!protein) {
+        if (!meal_unit) {
             return errorMessage('ARGUMENT_NOT_AVAILABLE', 'Provide Unit of meal like Katori, Piece')
         }
-        if (typeof food_item !== "string" || typeof meal_type !== "string" || !validMealTypes.includes(meal_type.toLowerCase()) || typeof calories !== "number" || typeof protein !== "number" || typeof quantity !== "number" || typeof meal_unit !== "string") {
+        if (typeof food_item !== "string" || typeof meal_type !== "string" || !validMealTypes.includes(meal_type.toLowerCase()) || typeof calories !== "number" || typeof protein !== "number" || typeof quantity !== "number" || typeof meal_unit !== "string" || !MEAL_UNITS.some(u => u.toLowerCase() === meal_unit.toLowerCase())) {
             return errorMessage('INVALID_FORMAT', "Provided argument must follow type")
         }
 

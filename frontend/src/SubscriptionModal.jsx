@@ -1,7 +1,7 @@
 import { X, Check, Zap, MessageSquare } from 'lucide-react';
 import './css/SubscriptionModal.css';
 import useScrollLock from './hooks/useScrollLock';
-import { SUBSCRIPTION_TYPE } from '../utils/constant';
+import { SUBSCRIPTION_TYPE, SUBSCRIPTION_TYPE_PRO, SUBSCRIPTION_TYPE_QUESTION, Constants } from '../utils/constant';
 
 const SubscriptionModal = ({ onClose, onUpgrade }) => {
   useScrollLock();
@@ -22,7 +22,7 @@ const SubscriptionModal = ({ onClose, onUpgrade }) => {
 
         <div className="plans-list">
           {/* Pro Plan */}
-          <div className="plan-card pro" onClick={() => onUpgrade(Object.keys(SUBSCRIPTION_TYPE)?.[0])}>
+          <div className="plan-card pro" onClick={() => onUpgrade(SUBSCRIPTION_TYPE_PRO)}>
             <div className="plan-header">
               <div className="plan-info">
                 <div className="plan-icon green">
@@ -32,7 +32,7 @@ const SubscriptionModal = ({ onClose, onUpgrade }) => {
               </div>
               <div className="plan-price-block">
                 <div className="popular-tag">Popular</div>
-                <div className="plan-price">₹199<span>/mo</span></div>
+                <div className="plan-price">₹{SUBSCRIPTION_TYPE.PRO}<span>/mo</span></div>
               </div>
             </div>
             <div className="plan-features">
@@ -52,7 +52,7 @@ const SubscriptionModal = ({ onClose, onUpgrade }) => {
           </div>
 
           {/* Question Pack */}
-          <div className="plan-card pack" onClick={() => onUpgrade(Object.keys(SUBSCRIPTION_TYPE)?.[1])}>
+          <div className="plan-card pack" onClick={() => onUpgrade(SUBSCRIPTION_TYPE_QUESTION)}>
             <div className="plan-header">
               <div className="plan-info">
                 <div className="plan-icon blue">
@@ -61,12 +61,12 @@ const SubscriptionModal = ({ onClose, onUpgrade }) => {
                 <div className="plan-name">Question Pack</div>
               </div>
               <div className="plan-price-block">
-                <div className="plan-price">₹49</div>
+                <div className="plan-price">₹{SUBSCRIPTION_TYPE.QUESTION}</div>
               </div>
             </div>
             <div className="plan-features">
               <div className="feature-item">
-                <Check size={18} /> 20 AI questions (no expiry)
+                <Check size={18} /> {Constants.QUESTION_AKSED} AI questions (no expiry)
               </div>
               <div className="feature-item">
                 <Check size={18} /> Pay only when needed

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { Send, X, Sparkles } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 import './css/AIChatbot.css';
 import useScrollLock from './hooks/useScrollLock';
 
@@ -201,7 +202,11 @@ const AIChatbot = ({ user, session, onClose }) => {
           )}
           {messages.map(msg => (
             <div key={msg.id} className={`message ${msg.type}`}>
-              {msg.content}
+              {msg.type === 'ai' ? (
+                <ReactMarkdown>{msg.content}</ReactMarkdown>
+              ) : (
+                msg.content
+              )}
             </div>
           ))}
           {isTyping && (

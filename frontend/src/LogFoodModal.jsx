@@ -1,19 +1,16 @@
 import { useState, useEffect } from 'react';
 import { X, Search, ChevronLeft, ChevronRight, Flame, Bookmark, BookmarkCheck, Sunrise, Sun, Moon, Apple, Star, Database } from 'lucide-react';
 import supabase from '../core/supabaseClient';
+import { MEAL_TYPES, MEAL_UNITS } from '../utils/constant';
 import LoadingScreen from './LoadingScreen';
 import './css/LogFoodModal.css';
 import useScrollLock from './hooks/useScrollLock';
 
-const MEALS = [
-  { id: 'Breakfast', Icon: Sunrise, label: 'Breakfast' },
-  { id: 'Lunch', Icon: Sun, label: 'Lunch' },
-  { id: 'Dinner', Icon: Moon, label: 'Dinner' },
-  { id: 'Snack', Icon: Apple, label: 'Snack' },
-];
+const MEAL_ICONS = { Breakfast: Sunrise, Lunch: Sun, Dinner: Moon, Snack: Apple };
+const MEALS = MEAL_TYPES.map((id) => ({ id, Icon: MEAL_ICONS[id], label: id }));
 
 const LogFoodModal = ({ user, onClose, onAdd }) => {
-  const [selectedMeal, setSelectedMeal] = useState('Breakfast');
+  const [selectedMeal, setSelectedMeal] = useState(MEAL_TYPES[0]);
   const [foodSearch, setFoodSearch] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [selectedFood, setSelectedFood] = useState(null);
@@ -29,7 +26,7 @@ const LogFoodModal = ({ user, onClose, onAdd }) => {
   const [prefUnit, setPrefUnit] = useState('Katori');
   const [isPrefLoading, setIsPrefLoading] = useState(false);
 
-  const units = ['Piece', 'Katori', 'Bowl', 'Plate', 'Glass', 'Cup', 'Tablespoon', 'Teaspoon', 'Slice', 'Serving', '100g', 'Handful'];
+  const units = MEAL_UNITS;
 
   const isFormValid = selectedFood || (foodSearch.trim().length > 0 && calories.trim().length > 0);
 

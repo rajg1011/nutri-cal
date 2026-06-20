@@ -1,5 +1,6 @@
 import Razorpay from "razorpay";
 import { handlePaymentAuthorizedLogic, handleSubscriptionCharged } from "../paymentService.webhook.js";
+import { SUBSCRIPTION_TYPE_PRO } from "../../../constant.js";
 
 const validWebhook = async (req) => {
     const signature = req.headers["x-razorpay-signature"];
@@ -34,7 +35,7 @@ const handleWebhookLogic = async (req) => {
             const { user_id: user, subscription: subType } = payload.subscription.entity.notes;
             const { id: subscription_id } = payload.subscription.entity;
             return await handleSubscriptionCharged({
-                subscription: subType || "PRO",
+                subscription: subType || SUBSCRIPTION_TYPE_PRO,
                 user_id: user,
                 subscription_id
             });
