@@ -35,20 +35,3 @@ export const MEAL_UNITS = [
     "Handful"
 ];
 
-export const MEAL_UNIT_HINTS = {
-    "Piece": "~30g",
-    "Katori": "~150g",
-    "Bowl": "~200g",
-    "Plate": "~300g",
-    "Glass": "~250ml",
-    "Cup": "~240ml",
-    "Tablespoon": "~15g",
-    "Teaspoon": "~5g",
-    "Slice": "~30g",
-    "Scoop": "~30g",
-    "Packet": "~50g",
-    "Bottle": "~500ml",
-    "Serving": "~150g",
-    "100g": "100 grams",
-    "Handful": "~30g"
-};

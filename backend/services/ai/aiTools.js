@@ -187,7 +187,7 @@ async function search_food_database({ query }, { supabase, signal }) {
 
         const { data, error } = await supabase
             .from('foodDescription')
-            .select('name,caloriesPerUnit,proteinPerUnit,unit')
+            .select('name,caloriesPerUnit,proteinPerUnit,unit,unitMeans')
             .or(`name.ilike.%${query}%,aliases.ilike.%${query}%`)
             .limit(10)
             .abortSignal(signal);
@@ -329,7 +329,7 @@ async function generate_meal_recommendations({ meal_type = null }, { supabase, s
                 .abortSignal(signal),
             !userPrefCache ? supabase
                 .from('userPreference')
-                .select('food, protein, calories, unit')
+                .select('food, protein, calories, unit, unitMeans')
                 .abortSignal(signal) : Promise.resolve({ data: null, error: null }),
         ]);
 
@@ -358,7 +358,7 @@ async function generate_meal_recommendations({ meal_type = null }, { supabase, s
 
         let suggestedFoods = [];
         if (notYetEatenToday.length < 3) {
-            let query = supabase.from('foodDescription').select('name, caloriesPerUnit, proteinPerUnit, unit');
+            let query = supabase.from('foodDescription').select('name, caloriesPerUnit, proteinPerUnit, unit, unitMeans');
             if (needsProtein) query = query.order('proteinPerUnit', { ascending: false });
             else if (needsCalories) query = query.order('caloriesPerUnit', { ascending: false });
             const { data: foods } = await query.limit(5).abortSignal(signal);

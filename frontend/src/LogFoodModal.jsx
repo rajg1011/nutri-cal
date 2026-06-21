@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Search, ChevronLeft, ChevronRight, Flame, Bookmark, BookmarkCheck, Sunrise, Sun, Moon, Apple, Star, Database, Pencil } from 'lucide-react';
 import supabase from '../core/supabaseClient';
-import { MEAL_TYPES, MEAL_UNITS, MEAL_UNIT_HINTS } from '../utils/constant';
+import { MEAL_TYPES, MEAL_UNITS } from '../utils/constant';
 import LoadingScreen from './LoadingScreen';
 import './css/LogFoodModal.css';
 import useScrollLock from './hooks/useScrollLock';
@@ -25,19 +25,15 @@ const LogFoodModal = ({ user, onClose, onAdd }) => {
   const [prefCalories, setPrefCalories] = useState('');
   const [prefProtein, setPrefProtein] = useState('');
   const [prefUnit, setPrefUnit] = useState('Katori');
+  const [prefUnitMeansValue, setPrefUnitMeansValue] = useState('');
+  const [prefUnitMeansType, setPrefUnitMeansType] = useState('g');
   const [isPrefLoading, setIsPrefLoading] = useState(false);
   const [isEditingSelected, setIsEditingSelected] = useState(false);
   const [dropdownPosition, setDropdownPosition] = useState(null);
   const searchWrapperRef = useRef(null);
 
   const units = MEAL_UNITS;
-  const unitHint = (unit) => {
-    if (!unit) return undefined;
-    const key = Object.keys(MEAL_UNIT_HINTS).find(
-      (u) => u.toLowerCase() === unit.toLowerCase()
-    );
-    return key ? MEAL_UNIT_HINTS[key] : undefined;
-  };
+  const unitHint = (food) => food?.unitMeans || undefined;
 
   const isFormValid = selectedFood || (foodSearch.trim().length > 0 && calories.trim().length > 0);
 
@@ -71,6 +67,7 @@ const LogFoodModal = ({ user, onClose, onAdd }) => {
           caloriesPerUnit: p.calories,
           proteinPerUnit: p.protein,
           unit: p.unit,
+          unitMeans: p.unitMeans,
           isPreference: true
         }));
 
@@ -185,6 +182,9 @@ const LogFoodModal = ({ user, onClose, onAdd }) => {
     setPrefCalories(String(selectedFood.caloriesPerUnit ?? ''));
     setPrefProtein(selectedFood.proteinPerUnit ? String(selectedFood.proteinPerUnit) : '');
     setPrefUnit(selectedFood.unit || 'Katori');
+    const match = /^(\d+(?:\.\d+)?)(g|ml)$/i.exec(selectedFood.unitMeans || '');
+    setPrefUnitMeansValue(match ? match[1] : '');
+    setPrefUnitMeansType(match ? match[2].toLowerCase() : 'g');
     setIsEditingSelected(true);
   };
 
@@ -196,9 +196,10 @@ const LogFoodModal = ({ user, onClose, onAdd }) => {
   };
 
   const handleSaveToMyFoods = async () => {
-    if (!prefName || !prefCalories) return;
+    if (!prefName || !prefCalories || !prefUnitMeansValue) return;
     setIsPrefLoading(true);
     try {
+      const unitMeans = prefUnitMeansValue ? `${prefUnitMeansValue}${prefUnitMeansType}` : null;
       const { data, error } = await supabase
         .from('userPreference')
         .insert([{
@@ -206,7 +207,8 @@ const LogFoodModal = ({ user, onClose, onAdd }) => {
           food: prefName,
           protein: parseFloat(prefProtein) || 0,
           calories: parseInt(prefCalories),
-          unit: prefUnit
+          unit: prefUnit,
+          unitMeans
         }])
         .select();
 
@@ -218,6 +220,7 @@ const LogFoodModal = ({ user, onClose, onAdd }) => {
         caloriesPerUnit: data[0].calories,
         proteinPerUnit: data[0].protein,
         unit: data[0].unit,
+        unitMeans: data[0].unitMeans,
         isPreference: true
       };
       handleSelectFood(savedFood);
@@ -235,6 +238,8 @@ const LogFoodModal = ({ user, onClose, onAdd }) => {
     if (isSavingPreference) {
       setPrefName(foodSearch);
       setPrefCalories(calories);
+      setPrefUnitMeansValue('');
+      setPrefUnitMeansType('g');
     }
   }, [isSavingPreference]);
 
@@ -298,8 +303,8 @@ const LogFoodModal = ({ user, onClose, onAdd }) => {
                           <div className="result-stats">
                             <div className="result-calories">{result.caloriesPerUnit} kcal</div>
                             <div className="result-unit">per {result.unit || 'serving'}</div>
-                            {unitHint(result.unit) && (
-                              <div className="result-unit-hint">{unitHint(result.unit)}</div>
+                            {unitHint(result) && (
+                              <div className="result-unit-hint">~{unitHint(result)}</div>
                             )}
                           </div>
                         </div>
@@ -315,8 +320,8 @@ const LogFoodModal = ({ user, onClose, onAdd }) => {
                   <div className="selected-name">{selectedFood.name}</div>
                   <div className="selected-subtitle">
                     {selectedFood.caloriesPerUnit} kcal per {selectedFood.unit}
-                    {unitHint(selectedFood.unit) && (
-                      <span className="unit-hint-badge">{unitHint(selectedFood.unit)}</span>
+                    {unitHint(selectedFood) && (
+                      <span className="unit-hint-badge">~{unitHint(selectedFood)}</span>
                     )}
                   </div>
                 </div>
@@ -372,8 +377,9 @@ const LogFoodModal = ({ user, onClose, onAdd }) => {
                   <div className="pref-card-title">Define this food for future use</div>
 
                   <div className="pref-input-group">
-                    <label className="pref-label">Food name</label>
+                    <label className="pref-label">Food name <span className="pref-label-required">*</span></label>
                     <input
+                      required
                       className="pref-input"
                       value={prefName}
                       onChange={(e) => setPrefName(e.target.value)}
@@ -382,24 +388,26 @@ const LogFoodModal = ({ user, onClose, onAdd }) => {
 
                   <div className="pref-row">
                     <div className="pref-input-group">
-                      <label className="pref-label">Calories per unit</label>
+                      <label className="pref-label">Calories per unit <span className="pref-label-required">*</span></label>
                       <input
                         type="number"
+                        required
                         className="pref-input"
                         value={prefCalories}
                         onChange={(e) => setPrefCalories(e.target.value)}
                       />
                     </div>
                     <div className="pref-input-group">
-                      <label className="pref-label">Unit</label>
+                      <label className="pref-label">Unit <span className="pref-label-required">*</span></label>
                       <select
+                        required
                         className="pref-input"
                         value={prefUnit}
                         onChange={(e) => setPrefUnit(e.target.value)}
                       >
                         {units.map(u => (
                           <option key={u} value={u}>
-                            {u}{unitHint(u) ? ` (${unitHint(u)})` : ''}
+                            {u}
                           </option>
                         ))}
                       </select>
@@ -418,10 +426,34 @@ const LogFoodModal = ({ user, onClose, onAdd }) => {
                     />
                   </div>
 
+                  <div className="pref-input-group">
+                    <label className="pref-label">What does 1 {prefUnit} mean? <span className="pref-label-required">*</span></label>
+                    <div className="pref-unit-means-row">
+                      <input
+                        type="number"
+                        step="0.1"
+                        min="0"
+                        required
+                        className="pref-unit-means-input"
+                        value={prefUnitMeansValue}
+                        onChange={(e) => setPrefUnitMeansValue(e.target.value)}
+                        placeholder="e.g. 150"
+                      />
+                      <select
+                        className="pref-unit-means-select"
+                        value={prefUnitMeansType}
+                        onChange={(e) => setPrefUnitMeansType(e.target.value)}
+                      >
+                        <option value="g">g</option>
+                        <option value="ml">ml</option>
+                      </select>
+                    </div>
+                  </div>
+
                   <button
                     className="save-pref-btn"
                     onClick={handleSaveToMyFoods}
-                    disabled={!prefName || !prefCalories || isPrefLoading}
+                    disabled={!prefName || !prefCalories || !prefUnitMeansValue || isPrefLoading}
                   >
                     {isPrefLoading ? (
                       'Saving...'
@@ -441,8 +473,9 @@ const LogFoodModal = ({ user, onClose, onAdd }) => {
                   <div className="pref-card-title">Edit & save to my foods</div>
 
                   <div className="pref-input-group">
-                    <label className="pref-label">Food name</label>
+                    <label className="pref-label">Food name <span className="pref-label-required">*</span></label>
                     <input
+                      required
                       className="pref-input"
                       value={prefName}
                       onChange={(e) => setPrefName(e.target.value)}
@@ -451,24 +484,26 @@ const LogFoodModal = ({ user, onClose, onAdd }) => {
 
                   <div className="pref-row">
                     <div className="pref-input-group">
-                      <label className="pref-label">Calories per unit</label>
+                      <label className="pref-label">Calories per unit <span className="pref-label-required">*</span></label>
                       <input
                         type="number"
+                        required
                         className="pref-input"
                         value={prefCalories}
                         onChange={(e) => setPrefCalories(e.target.value)}
                       />
                     </div>
                     <div className="pref-input-group">
-                      <label className="pref-label">Unit</label>
+                      <label className="pref-label">Unit <span className="pref-label-required">*</span></label>
                       <select
+                        required
                         className="pref-input"
                         value={prefUnit}
                         onChange={(e) => setPrefUnit(e.target.value)}
                       >
                         {units.map(u => (
                           <option key={u} value={u}>
-                            {u}{unitHint(u) ? ` (${unitHint(u)})` : ''}
+                            {u}
                           </option>
                         ))}
                       </select>
@@ -487,6 +522,30 @@ const LogFoodModal = ({ user, onClose, onAdd }) => {
                     />
                   </div>
 
+                  <div className="pref-input-group">
+                    <label className="pref-label">What does 1 {prefUnit} mean? <span className="pref-label-required">*</span></label>
+                    <div className="pref-unit-means-row">
+                      <input
+                        type="number"
+                        step="0.1"
+                        min="0"
+                        required
+                        className="pref-unit-means-input"
+                        value={prefUnitMeansValue}
+                        onChange={(e) => setPrefUnitMeansValue(e.target.value)}
+                        placeholder="e.g. 150"
+                      />
+                      <select
+                        className="pref-unit-means-select"
+                        value={prefUnitMeansType}
+                        onChange={(e) => setPrefUnitMeansType(e.target.value)}
+                      >
+                        <option value="g">g</option>
+                        <option value="ml">ml</option>
+                      </select>
+                    </div>
+                  </div>
+
                   <div className="pref-edit-actions">
                     <button className="cancel-edit-btn" onClick={() => setIsEditingSelected(false)}>
                       Cancel
@@ -494,7 +553,7 @@ const LogFoodModal = ({ user, onClose, onAdd }) => {
                     <button
                       className="save-pref-btn"
                       onClick={handleSaveToMyFoods}
-                      disabled={!prefName || !prefCalories || isPrefLoading}
+                      disabled={!prefName || !prefCalories || !prefUnitMeansValue || isPrefLoading}
                     >
                       {isPrefLoading ? (
                         'Saving...'
@@ -511,8 +570,8 @@ const LogFoodModal = ({ user, onClose, onAdd }) => {
                   <div className="quantity-section">
                     <label className="section-label">
                       QUANTITY
-                      {unitHint(selectedFood.unit) && (
-                        <span className="quantity-unit-hint">1 {selectedFood.unit} &asymp; {unitHint(selectedFood.unit)}</span>
+                      {unitHint(selectedFood) && (
+                        <span className="quantity-unit-hint">1 {selectedFood.unit} = {unitHint(selectedFood)}</span>
                       )}
                     </label>
                     <div className="quantity-control">
