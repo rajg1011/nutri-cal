@@ -2,6 +2,8 @@ import OpenAI from "openai";
 import runAiTool from "../runAitools.js";
 import { withTimeout } from "../../../utils/abortReq.js";
 import { validMealTypes, MEAL_UNITS } from "../../../constant.js";
+import langfuse from "../../../config/langfuse.js";
+import { safeFlush } from "../observability/langfuse.js";
 
 
 const client = new OpenAI({
@@ -197,7 +199,19 @@ const generateOpenAIResponse = async (inputMessages, toolContext = {}) => {
   const messages = [...inputMessages];
   let usage = { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 };
 
+  const trace = langfuse.trace({
+    name: "chatbot-request",
+    userId: toolContext.userId,
+    input: inputMessages,
+  });
+
   for (let round = 0; round < MAX_TOOL_ROUNDS; round += 1) {
+    const generation = trace.generation({
+      name: `round-${round}`,
+      model: "gpt-4o-mini",
+      input: messages,
+    });
+
     let response;
     try {
       response = await withTimeout(
@@ -217,6 +231,8 @@ const generateOpenAIResponse = async (inputMessages, toolContext = {}) => {
         "OpenAI API call"
       );
     } catch (e) {
+      generation.end({ level: "ERROR", statusMessage: e.message });
+      await safeFlush();
       throw e;
     }
 
@@ -226,6 +242,8 @@ const generateOpenAIResponse = async (inputMessages, toolContext = {}) => {
     const toolCalls = message.tool_calls || [];
 
     if (toolCalls.length === 0) {
+      trace.update({ output: message.content || "" });
+      await safeFlush();
       return { content: message.content || "", usage };
     }
 
@@ -238,6 +256,11 @@ const generateOpenAIResponse = async (inputMessages, toolContext = {}) => {
     const toolResponses = await Promise.all(
       toolCalls.map(async (toolCall) => {
         try {
+          const span = trace.span({
+            name: `tool:${toolCall.function.name}`,
+            input: toolCall.function.arguments,
+          });
+
           const args = JSON.parse(
             toolCall.function.arguments
           );
@@ -253,6 +276,7 @@ const generateOpenAIResponse = async (inputMessages, toolContext = {}) => {
             TOOL_TIMEOUT_MS,
             `tool:${toolCall.function.name}`
           )
+          span.end({ output: result });
 
           return {
             role: "tool",
@@ -260,6 +284,7 @@ const generateOpenAIResponse = async (inputMessages, toolContext = {}) => {
             content: JSON.stringify(result),
           };
         } catch (error) {
+          span.end({ level: "ERROR", statusMessage: error.message ?? String(error) });
           return {
             role: "tool",
             tool_call_id: toolCall.id,
@@ -271,6 +296,9 @@ const generateOpenAIResponse = async (inputMessages, toolContext = {}) => {
 
     messages.push(...toolResponses);
   }
+
+  trace.update({ output: "exhausted-rounds" });
+  await safeFlush();  // we are flushing bcz lambda will freez as request complete.
 
   console.log({ rounds: MAX_TOOL_ROUNDS }, "Exhausted tool rounds")
   return {
