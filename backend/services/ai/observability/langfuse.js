@@ -1,4 +1,4 @@
-import langfuse from "../../../config/langfuse";
+import langfuse from "../../../config/langfuse.js";
 
 const safeFlush = async () => {
     try {
