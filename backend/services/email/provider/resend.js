@@ -1,5 +1,5 @@
 import { Resend } from "resend";
-import { buildWelcomeEmailHtml, buildWelcomeEmailText } from "../../../utils/emailTemplates/welcome";
+import { buildWelcomeEmailHtml, buildWelcomeEmailText } from "../../../utils/emailTemplates/welcome.js";
 
 const client = new Resend(process.env.RESEND_API_KEY);
 
