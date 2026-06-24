@@ -4,6 +4,8 @@ import isSubscriptionActive from "../../utils/subscriptionActive.js"
 import supabaseAdmin from "../../config/supabaseAdmin.js"
 import { deleteCache, getCache, setCache } from "../../services/cache/cache.js"
 import { Keys, TTL } from "../../utils/cacheKeys.js"
+import queueService from "../../services/queue/queueService.js"
+import { JOB_TYPES } from "../../services/queue/jobTypes.js"
 
 const createOrderController = async (req, res) => {
     try {
@@ -116,6 +118,22 @@ const verifyPaymentController = async (req, res) => {
 
             if (subError) {
                 return res.status(500).json({ success: false, message: "Internal Server Error" })
+            }
+
+            try {
+                const { data: userData } = await req.supabase.auth.getUser();
+                if (userData?.user?.email) {
+                    await queueService.enqueue(JOB_TYPES.SEND_SUBSCRIPTION_EMAIL, {
+                        email: userData.user.email,
+                        name: userData.user.user_metadata?.full_name || userData.user.user_metadata?.name || "",
+                        plan: purchasedPlan,
+                        price: SUBSCRIPTION_TYPE[purchasedPlan],
+                        endDate: updatePayload.end_date,
+                        questionsRemaining: updatePayload.question_asked,
+                    });
+                }
+            } catch (emailError) {
+                console.log("Error enqueueing subscription email:", emailError);
             }
         }
 

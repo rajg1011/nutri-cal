@@ -1,9 +1,29 @@
 import isSubscriptionActive from "../../utils/subscriptionActive.js";
-import { Constants, SUBSCRIPTION_TYPE_PRO, SUBSCRIPTION_TYPE_QUESTION } from "../../constant.js";
+import { Constants, SUBSCRIPTION_TYPE, SUBSCRIPTION_TYPE_PRO, SUBSCRIPTION_TYPE_QUESTION } from "../../constant.js";
 import supabaseAdmin from "../../config/supabaseAdmin.js";
 import { razorPayWebhook } from "./provider/razorpay.webhook.js";
 import { deleteCache } from "../cache/cache.js";
 import { Keys } from "../../utils/cacheKeys.js";
+import queueService from "../queue/queueService.js";
+import { JOB_TYPES } from "../queue/jobTypes.js";
+import getUserContact from "../../utils/getUserContact.js";
+
+const enqueueSubscriptionEmail = async ({ user_id, plan, price, endDate, questionsRemaining }) => {
+    try {
+        const contact = await getUserContact(user_id);
+        if (!contact?.email) return;
+        await queueService.enqueue(JOB_TYPES.SEND_SUBSCRIPTION_EMAIL, {
+            email: contact.email,
+            name: contact.name,
+            plan,
+            price,
+            endDate,
+            questionsRemaining,
+        });
+    } catch (emailError) {
+        console.log("Error enqueueing subscription email:", emailError);
+    }
+};
 
 const webhookProvider = {
     "razorpay": razorPayWebhook
@@ -46,6 +66,14 @@ const handlePaymentAuthorizedLogic = async ({ user_id, payment_id, subscription,
             if (subError) {
                 throw new Error("Error at handlePayementAuthorizedLogic's update query")
             }
+
+            await enqueueSubscriptionEmail({
+                user_id,
+                plan: purchasedPlan,
+                price: SUBSCRIPTION_TYPE[purchasedPlan],
+                endDate: updatePayload.end_date,
+                questionsRemaining: updatePayload.question_asked,
+            });
         }
         await deleteCache(Keys.userSubscribe(user_id))
         return true
@@ -72,6 +100,7 @@ const handleSubscriptionCharged = async ({ user_id, subscription_id, subscriptio
 
         const existing = existingRows?.[0];
         const purchasedPlan = subscription.toUpperCase();
+        const wasActive = isSubscriptionActive(existingRows);
 
         let updatePayload = {
             user_id,
@@ -81,7 +110,7 @@ const handleSubscriptionCharged = async ({ user_id, subscription_id, subscriptio
         };
 
         if (purchasedPlan === SUBSCRIPTION_TYPE_QUESTION) {
-            if (isSubscriptionActive(existingRows)) {
+            if (wasActive) {
                 await deleteCache(Keys.userSubscribe(user_id))
                 return true;
             }
@@ -97,6 +126,16 @@ const handleSubscriptionCharged = async ({ user_id, subscription_id, subscriptio
             .upsert(updatePayload, { onConflict: 'user_id' })
         if (subError) {
             throw new Error("Error at handleSubscriptionCharged's update query")
+        }
+
+        if (!wasActive) {
+            await enqueueSubscriptionEmail({
+                user_id,
+                plan: purchasedPlan,
+                price: SUBSCRIPTION_TYPE[purchasedPlan],
+                endDate: updatePayload.end_date,
+                questionsRemaining: updatePayload.question_asked,
+            });
         }
 
         await deleteCache(Keys.userSubscribe(user_id))

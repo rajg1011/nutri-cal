@@ -3,6 +3,7 @@ import emailService from "../services/email/emailService.js";
 
 const handlers = {
     [JOB_TYPES.SEND_WELCOME_EMAIL]: emailService.sendWelcomeEmail,
+    [JOB_TYPES.SEND_SUBSCRIPTION_EMAIL]: emailService.sendSubscriptionEmail,
 };
 
 export const handler = async (event) => {

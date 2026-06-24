@@ -16,5 +16,6 @@ const getProvider = () => {
 };
 
 const sendWelcomeEmail = (payload) => getProvider().sendWelcomeEmail(payload);
+const sendSubscriptionEmail = (payload) => getProvider().sendSubscriptionEmail(payload);
 
-export default { sendWelcomeEmail };
+export default { sendWelcomeEmail, sendSubscriptionEmail };
