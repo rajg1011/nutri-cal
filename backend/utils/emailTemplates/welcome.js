@@ -109,7 +109,6 @@ const buildWelcomeEmailHtml = (name) => `<!DOCTYPE html>
           <!-- Footer -->
           <tr>
             <td align="center" style="padding-top:28px;">
-              <p style="margin:0 0 6px; font-family:'Outfit', Arial, sans-serif; font-size:13px; color:#748c82;">Questions? Just reply to this email — we read every one.</p>
               <p style="margin:0; font-family:'Outfit', Arial, sans-serif; font-size:12px; color:#aebaba;">&copy; ${new Date().getFullYear()} NutriCal. All rights reserved.</p>
             </td>
           </tr>
@@ -129,8 +128,6 @@ Your NutriCal profile is all set up. Here's what you can do next:
 - Track your macros — see protein, carbs and fat stack up against your daily goal.
 - Ask your AI nutrition coach — get personalized guidance based on your goals and history.
 
-Open NutriCal: ${APP_URL}/dashboard
-
-Questions? Just reply to this email — we read every one.`;
+Open NutriCal: ${APP_URL}/dashboard`
 
 export { buildWelcomeEmailText, buildWelcomeEmailHtml }
