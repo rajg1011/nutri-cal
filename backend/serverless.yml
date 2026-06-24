@@ -22,14 +22,36 @@ provider:
     LANGFUSE_SECRET_KEY: ${env:LANGFUSE_SECRET_KEY}
     LANGFUSE_PUBLIC_KEY: ${env:LANGFUSE_PUBLIC_KEY}
     LANGFUSE_BASE_URL: ${env:LANGFUSE_BASE_URL}
+    RESEND_API_KEY: ${env:RESEND_API_KEY}
+    RESEND_SENDER_EMAIL: ${env:RESEND_SENDER_EMAIL}
+    NOTIFICATIONS_QUEUE_URL: ${env:NOTIFICATIONS_QUEUE_URL}
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - sqs:SendMessage
+            - sqs:ReceiveMessage
+            - sqs:DeleteMessage
+            - sqs:GetQueueAttributes
+          Resource:
+            - arn:aws:sqs:ap-south-1:840869896762:nutrical-messages
   deploymentBucket:
     maxPreviousDeploymentArtifacts: 3
-    
+
 functions:
   app:
     handler: handler.handler
     events:
       - httpApi: '*'
+
+  notificationWorker:
+    handler: workers/notificationWorker.handler
+    events:
+      - sqs:
+          arn: arn:aws:sqs:ap-south-1:840869896762:nutrical-messages
+          batchSize: 10
+          functionResponseType: ReportBatchItemFailures
 
 package:
   patterns:

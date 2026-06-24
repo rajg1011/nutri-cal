@@ -19,6 +19,7 @@ import {
   X,
   Zap,
 } from 'lucide-react';
+import axios from 'axios';
 import supabase from '../core/supabaseClient';
 import useScrollLock from './hooks/useScrollLock';
 import './css/ProfileOnboarding.css';
@@ -87,7 +88,17 @@ const parseGoalsFromDb = (goalString) => {
   return GOALS.map(goal => goal.value).filter(value => goalString.includes(value));
 };
 
-const ProfileOnboarding = ({ user, onComplete, onClose }) => {
+const sendWelcomeEmail = (session) => {
+  axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/notifications/welcome-email`, {}, {
+    headers: {
+      Authorization: `Bearer ${session.access_token}`
+    }
+  }).catch((error) => {
+    console.error('Error sending welcome email:', error);
+  });
+};
+
+const ProfileOnboarding = ({ user, session, onComplete, onClose }) => {
   const isEditing = Boolean(onClose);
   const [step, setStep] = useState(1);
   const [profile, setProfile] = useState(() => ({
@@ -248,6 +259,8 @@ const ProfileOnboarding = ({ user, onComplete, onClose }) => {
       setSubmitError('Could not save your profile. Please try again.');
       return;
     }
+
+    if (!isEditing) sendWelcomeEmail(session);
 
     onComplete();
   };

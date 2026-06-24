@@ -6,6 +6,7 @@ import AuthMiddleWare from "./middlewares/auth.middleware.js";
 import { paymentRoutes } from "./modules/payment/payment.routes.js";
 import { webhookRouter } from "./webhooks/payment/payment.webhook.route.js";
 import { AISubscriberMiddleware } from "./middlewares/aiSubscriber.middleware.js";
+import { notificationRoutes } from "./modules/notification/notification.routes.js";
 
 
 const app = express();
@@ -17,6 +18,7 @@ app.use(cors({
 
 app.use("/api/chatbot", express.json(), AuthMiddleWare, AISubscriberMiddleware, aiChatbotRoutes);
 app.use("/payment", express.json(), AuthMiddleWare, paymentRoutes)
+app.use("/api/notifications", express.json(), AuthMiddleWare, notificationRoutes)
 app.use("/webhook", express.raw({ type: '*/*' }), webhookRouter)
 
 // const PORT = process.env.PORT || 3000;

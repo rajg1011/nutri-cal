@@ -1,0 +1,3 @@
+export const JOB_TYPES = {
+    SEND_WELCOME_EMAIL: "SEND_WELCOME_EMAIL",
+};

@@ -22,7 +22,7 @@ const PublicRoute = ({ user, loading, children }) => {
   return !user ? children : <Navigate to="/dashboard" replace />;
 };
 
-const ProfileGate = ({ user, children }) => {
+const ProfileGate = ({ user, session, children }) => {
   const [isCheckingProfile, setIsCheckingProfile] = useState(true);
   const [hasProfile, setHasProfile] = useState(false);
   const [profileError, setProfileError] = useState('');
@@ -81,7 +81,7 @@ const ProfileGate = ({ user, children }) => {
     return (
       <>
         {children}
-        <ProfileOnboarding user={user} onComplete={() => setHasProfile(true)} />
+        <ProfileOnboarding user={user} session={session} onComplete={() => setHasProfile(true)} />
       </>
     );
   }
@@ -147,7 +147,7 @@ function App() {
         path="/dashboard"
         element={
           <ProtectedRoute user={user} loading={loading}>
-            <ProfileGate user={user}>
+            <ProfileGate user={user} session={session}>
               <Dashboard user={user} session={session} />
             </ProfileGate>
           </ProtectedRoute>
