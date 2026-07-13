@@ -55,18 +55,20 @@ const createOrderController = async (req, res) => {
 
 const verifyPaymentController = async (req, res) => {
     try {
-        const { order_id, payment_id, signature } = req.body;
+        const { order_id, subscription_id, payment_id, signature } = req.body;
 
-        if (!order_id || !payment_id || !signature) {
+        if (!payment_id || !signature || (!order_id && !subscription_id)) {
             return res.status(400).json({ success: false, message: "Invalid request" })
         }
 
-        const verify = await paymentService.verifyPayment({ order_id, payment_id, signature })
+        const { verified, mode } = await paymentService.verifyPayment({ order_id, subscription_id, payment_id, signature })
 
-        if (!verify) {
-            const { _, error } = await supabaseAdmin.from('userPaymentDetails').update({ subscription_status: "FAILED" }).eq('order_id', order_id)
-            if (error) {
-                console.log("Error in updating payment status")
+        if (!verified) {
+            if (mode === "order") {
+                const { _, error } = await supabaseAdmin.from('userPaymentDetails').update({ subscription_status: "FAILED" }).eq('order_id', order_id)
+                if (error) {
+                    console.log("Error in updating payment status")
+                }
             }
             return res.status(400).json({
                 success: false,
@@ -74,34 +76,40 @@ const verifyPaymentController = async (req, res) => {
             })
         }
 
-        const { data, error } = await supabaseAdmin.from('userPaymentDetails').select('*').eq('order_id', order_id).eq('user_id', req.user).single();
-        if (error) {
-            return res.status(500).json({ success: false, message: "Internal Server Error" })
-        }
+        let purchasedPlan;
 
-        if (!data || data.length == 0) {
-            return res.status(404).json({
-                success: false,
-                message: "Order not found"
-            });
-        }
-        if (data.subscription_status === "CONFIRM") {
-            return res.status(200).json({
-                success: true,
-                message: "Already confirmed"
-            });
-        }
+        if (mode === "order") {
+            const { data, error } = await supabaseAdmin.from('userPaymentDetails').select('*').eq('order_id', order_id).eq('user_id', req.user).single();
+            if (error) {
+                return res.status(500).json({ success: false, message: "Internal Server Error" })
+            }
 
-        await supabaseAdmin.from('userPaymentDetails').update({ subscription_status: "CONFIRM", payment_id: payment_id }).eq('order_id', order_id).eq('user_id', req.user);
+            if (!data || data.length == 0) {
+                return res.status(404).json({
+                    success: false,
+                    message: "Order not found"
+                });
+            }
+            if (data.subscription_status === "CONFIRM") {
+                return res.status(200).json({
+                    success: true,
+                    message: "Already confirmed"
+                });
+            }
+
+            await supabaseAdmin.from('userPaymentDetails').update({ subscription_status: "CONFIRM", payment_id: payment_id }).eq('order_id', order_id).eq('user_id', req.user);
+            purchasedPlan = data.plan.toUpperCase();
+        } else {
+            purchasedPlan = SUBSCRIPTION_TYPE_PRO;
+        }
 
         const checkSubscription = await supabaseAdmin.from("userSubscriptionDetails").select('*').eq('user_id', req.user).eq('status', 'ACTIVE');
 
         if (!isSubscriptionActive(checkSubscription.data)) {
-            const purchasedPlan = data.plan.toUpperCase();
             let updatePayload = {
                 user_id: req.user,
                 subscription_type: purchasedPlan,
-                subscription_id: payment_id,
+                subscription_id: mode === "order" ? payment_id : subscription_id,
                 status: "ACTIVE"
             };
 
@@ -140,6 +148,7 @@ const verifyPaymentController = async (req, res) => {
         await deleteCache(Keys.userSubscribe(req.user))
 
         return res.status(200).json({ success: true, message: "Subscription Successful" })
+
     } catch (e) {
         console.log(e)
         return res.status(500).json({ success: false, message: "Internal Server Error" })
@@ -187,8 +196,9 @@ const checkSubscriptionController = async (req, res) => {
         }
 
         const isAvailable = isSubscriptionActive(data);
+        const subscriptionType = isAvailable ? data[0]?.subscription_type?.toUpperCase() ?? null : null;
 
-        await setCache(Keys.userSubscribe(req.user), { isSubscriber: isAvailable }, TTL.USER_SUBSCRIBER);
+        await setCache(Keys.userSubscribe(req.user), { isSubscriber: isAvailable, type: subscriptionType }, TTL.USER_SUBSCRIBER);
 
         return res.status(200).json({ success: true, isAvailable });
     } catch (e) {

@@ -23,6 +23,7 @@ const verifyPayment = async (response, session) => {
     try {
         const payload = {
             order_id: response.razorpay_order_id,
+            subscription_id: response.razorpay_subscription_id,
             payment_id: response.razorpay_payment_id,
             signature: response.razorpay_signature
         };
@@ -69,7 +70,7 @@ export const usePayment = ({ user, session }) => {
                 },
                 handler: async (response) => {
                     setIsProcessing(true);
-                    if(subscription === SUBSCRIPTION_TYPE_QUESTION) await verifyPayment(response, session);
+                    await verifyPayment(response, session);
                     setIsProcessing(false);
                 },
                 modal: {

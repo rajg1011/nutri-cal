@@ -2,10 +2,14 @@ import Razorpay from "razorpay";
 import { handlePaymentAuthorizedLogic, handleSubscriptionCharged } from "../paymentService.webhook.js";
 import { SUBSCRIPTION_TYPE_PRO } from "../../../constant.js";
 
+const parseRawBody = (req) => {
+    return JSON.parse(req.body.toString("utf8"));
+}
+
 const validWebhook = async (req) => {
     const signature = req.headers["x-razorpay-signature"];
     const isValid = Razorpay.validateWebhookSignature(
-        JSON.stringify(req.body),
+        req.body.toString("utf8"),
         signature,
         process.env.RAZORPAY_WEBHOOK_SECRET
     );
@@ -17,13 +21,13 @@ const getEventId = (req) => {
 }
 
 const eventParser = (req) => {
-    const { event } = req.body;
+    const { event } = parseRawBody(req);
     return event;
 }
 
 
 const handleWebhookLogic = async (req) => {
-    const { event, payload } = req.body
+    const { event, payload } = parseRawBody(req)
     switch (event) {
         case "payment.authorized": {
             const { id: payment_id, order_id } = payload.payment.entity;

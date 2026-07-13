@@ -30,13 +30,22 @@ export const razorPay = (() => {
                 throw new Error("Failed to create order");
             }
         },
-        verifyPayment: async ({ order_id, payment_id, signature }) => {
-            const generated_signature = crypto
-                .createHmac("sha256", process.env.RAZORPAY_SECRET)
-                .update(order_id + "|" + payment_id)
-                .digest("hex");
-
-            return generated_signature === signature;
+        verifyPayment: async ({ order_id, subscription_id, payment_id, signature }) => {
+            if (order_id) {
+                const generated_signature = crypto
+                    .createHmac("sha256", process.env.RAZORPAY_SECRET)
+                    .update(order_id + "|" + payment_id)
+                    .digest("hex");
+                return { verified: generated_signature === signature, mode: "order" };
+            }
+            if (subscription_id) {
+                const generated_signature = crypto
+                    .createHmac("sha256", process.env.RAZORPAY_SECRET)
+                    .update(payment_id + "|" + subscription_id)
+                    .digest("hex");
+                return { verified: generated_signature === signature, mode: "subscription" };
+            }
+            return { verified: false, mode: null };
         },
         createProPlanSubscription: async ({ user_id }) => {
             try {
