@@ -7,6 +7,7 @@ const MAX_FACTS_IN_PROMPT = 50;
 
 const FACTS_SYSTEM_PROMPT = `From this nutrition-coaching conversation snippet, extract only concrete, durable facts worth remembering for future conversations: custom food calorie/macro values the user states, allergies, dietary restrictions, stated goals, or commitments.
 Ignore generic questions, small talk, and anything not explicitly stated as true about this user. Do not invent or infer facts that aren't directly stated.
+Do NOT extract anything the app can already look up itself or that changes day to day: today's/recent calories or protein consumed, calorie or protein targets, deficiencies or gaps, meal logs, or trend averages. Those are live numbers re-fetched from the app each time and go stale the moment they're memorized as fixed facts — only extract information the app has no other way of knowing.
 Each fact must be a short, self-contained statement (e.g. "User's homemade chole bhature is 120 kcal per serving").
 Respond with strict JSON only: {"facts": ["...", "..."]}. Respond {"facts": []} if nothing qualifies.`;
 

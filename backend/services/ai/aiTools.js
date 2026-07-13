@@ -284,6 +284,7 @@ async function get_deficiency_analysis(_, { supabase, signal, userId }) {
                 consumed: today.data.total_protein,
                 target: protein_target,
                 gap: Math.round(protein_target - today.data.total_protein),
+                target_basis: 'estimated at 1.6g protein per kg bodyweight - a generic guideline, not a personalized goal the user set',
             });
         }
         if (calorie_target && today.data.total_calories < calorie_target * 0.8) {
@@ -292,6 +293,7 @@ async function get_deficiency_analysis(_, { supabase, signal, userId }) {
                 consumed: today.data.total_calories,
                 target: calorie_target,
                 gap: calorie_target - today.data.total_calories,
+                target_basis: 'the calorie goal the user set',
             });
         }
 
