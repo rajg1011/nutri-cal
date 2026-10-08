@@ -1,4 +1,5 @@
 import { generate_meal_recommendations, get_deficiency_analysis, get_meal_history, get_today_nutrition, get_user_profile, get_weekly_trends, log_meal, search_food_database, update_goal } from "./aiTools.js";
+import logger from "../../utils/logger.js";
 
 const TOOL_MAP = {
     get_user_profile,
@@ -16,6 +17,7 @@ async function runAiTool(name, args, context, signal) {
     const tool = TOOL_MAP[name];
 
     if (!tool) {
+        logger.warn({ tool: name }, "Unknown AI tool requested");
         return {
             success: false,
             error: {
@@ -28,6 +30,7 @@ async function runAiTool(name, args, context, signal) {
     try {
         return await tool(args, context, signal);
     } catch (e) {
+        logger.error({ err: e, tool: name, userId: context?.userId }, "AI tool execution failed");
         return {
             success: false,
             error: {

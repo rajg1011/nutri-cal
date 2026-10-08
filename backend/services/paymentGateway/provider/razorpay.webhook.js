@@ -1,6 +1,7 @@
 import Razorpay from "razorpay";
 import { handlePaymentAuthorizedLogic, handleSubscriptionCharged } from "../paymentService.webhook.js";
 import { SUBSCRIPTION_TYPE_PRO } from "../../../constant.js";
+import logger from "../../../utils/logger.js";
 
 const parseRawBody = (req) => {
     return JSON.parse(req.body.toString("utf8"));
@@ -33,7 +34,7 @@ const handleWebhookLogic = async (req) => {
             const { id: payment_id, order_id, invoice_id, notes } = payload.payment.entity;
             const { user_id, subscription } = notes || {};
             if (invoice_id || !order_id || !user_id || !subscription) {
-                console.log(`Skipping payment.authorized for non-order payment: ${payment_id}`);
+                logger.info({ paymentId: payment_id }, "Skipping payment.authorized for non-order payment");
                 return true;
             }
             return await handlePaymentAuthorizedLogic({ user_id, payment_id, subscription, order_id });
@@ -51,7 +52,7 @@ const handleWebhookLogic = async (req) => {
             });
         }
         default:
-            console.log(`Unhandled event: ${event}`);
+            logger.info({ event }, "Unhandled webhook event");
             return true
     }
 }

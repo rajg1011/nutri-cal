@@ -1,6 +1,7 @@
 import { getCache, setCache } from "../services/cache/cache.js";
 import { Keys, TTL } from "../utils/cacheKeys.js";
 import isSubscriptionActive from "../utils/subscriptionActive.js"
+import logger from "../utils/logger.js";
 
 const AISubscriberMiddleware = async (req, res, next) => {
     try {
@@ -17,6 +18,7 @@ const AISubscriberMiddleware = async (req, res, next) => {
         const { data, error } = await req.supabase.from('userSubscriptionDetails').select('*');
 
         if (error) {
+            logger.error({ err: error, userId: req.user }, "Error fetching userSubscriptionDetails in AISubscriberMiddleware");
             throw new Error("Internal Server Error");
         }
 
@@ -32,7 +34,7 @@ const AISubscriberMiddleware = async (req, res, next) => {
         req.subscriptionType = subscriptionType;
         return next()
     } catch (e) {
-        console.log(e);
+        logger.error({ err: e, userId: req.user }, "Error in AISubscriberMiddleware");
         return res.status(500).json({ message: "Internal Server Error" })
     }
 }

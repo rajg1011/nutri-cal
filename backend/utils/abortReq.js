@@ -1,8 +1,10 @@
+import logger from "./logger.js";
+
 const withTimeout = async (operation, ms, label = "Operation") => {
     const controller = new AbortController();
     
     controller.signal.addEventListener("abort", () => {
-        console.log(`${label} aborted`);
+        logger.warn({ label, timeoutMs: ms }, "Operation aborted");
     });
 
     let timeoutId;

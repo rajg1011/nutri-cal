@@ -1,5 +1,6 @@
 import { Keys, TTL } from "../../../utils/cacheKeys.js";
 import { getCache, setCache, deleteCache } from "../../cache/cache.js";
+import logger from "../../../utils/logger.js";
 
 const MAX_RECENT_MESSAGES = 12;
 const SUMMARIZE_TRIGGER_MESSAGES = MAX_RECENT_MESSAGES + 6;
@@ -76,7 +77,7 @@ const extractFacts = async (userId, supabase, oldMessages, existingFacts, comple
     const updatedFacts = [...existingFacts, ...newFacts].slice(-MAX_FACTS_IN_PROMPT);
     await setCache(Keys.userMemoryFacts(userId), updatedFacts, TTL.CHAT_MEMORY);
   } catch (e) {
-    console.log(e, "Failed to extract memory facts; skipping this batch");
+    logger.error({ err: e, userId }, "Failed to extract memory facts; skipping this batch");
     throw e;
   }
 };
@@ -115,7 +116,7 @@ const appendTurn = async ({ userId, supabase, userMessage, assistantMessage, usa
 
     await setCache(Keys.chatHistory(userId), updated, TTL.CHAT_MEMORY);
   } catch (e) {
-    console.log("Error in appen", e);
+    logger.error({ err: e, userId }, "Error in appendTurn");
     throw e;
   }
 };

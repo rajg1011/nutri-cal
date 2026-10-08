@@ -1,6 +1,7 @@
 import { validMealTypes, MEAL_UNITS } from "../../constant.js";
 import { Keys, TTL } from "../../utils/cacheKeys.js";
 import { deleteCache, getCache, setCache } from "../cache/cache.js";
+import logger from "../../utils/logger.js";
 
 const errorMessage = (errorCode, errorMessage) => {
     return {
@@ -39,6 +40,7 @@ async function get_user_profile(_, { supabase, signal, userId }) {
         };
 
     } catch (e) {
+        logger.error({ err: e, tool: "get_user_profile", userId }, "AI tool failed");
         return errorMessage('INTERNAL_SERVER_ERROR', e?.message || 'Interal Server Error')
     }
 }
@@ -101,6 +103,7 @@ async function get_today_nutrition(_, { supabase, signal, userId }) {
             }
         };
     } catch (e) {
+        logger.error({ err: e, tool: "get_today_nutrition", userId }, "AI tool failed");
         return errorMessage("INTERNAL_SERVER_ERROR", e?.message || "Internal Server Error")
     }
 }
@@ -128,6 +131,7 @@ async function get_meal_history({ days = 7 }, { supabase, signal }) {
             data
         }
     } catch (e) {
+        logger.error({ err: e, tool: "get_meal_history" }, "AI tool failed");
         return errorMessage('INTERNAL_SERVER_ERROR', e?.message || "Internal Server Error")
     }
 }
@@ -163,6 +167,7 @@ async function get_weekly_trends(_, { supabase, signal }) {
             data: { days, avg_calories, avg_protein }
         };
     } catch (e) {
+        logger.error({ err: e, tool: "get_weekly_trends" }, "AI tool failed");
         return errorMessage('INTERNAL_SERVER_ERROR', e?.message || "Internal Server Error")
     }
 }
@@ -201,6 +206,7 @@ async function search_food_database({ query }, { supabase, signal }) {
             data
         }
     } catch (e) {
+        logger.error({ err: e, tool: "search_food_database", query }, "AI tool failed");
         return errorMessage('INTERNAL_SERVER_ERROR', e?.message || "Internal Server Error")
     }
 }
@@ -236,6 +242,7 @@ async function log_meal({ food_item, meal_type, calories, protein, quantity, mea
 
         return { success: true, data: "Meal Inserted Successfully" };
     } catch (e) {
+        logger.error({ err: e, tool: "log_meal", meal_type }, "AI tool failed");
         return errorMessage('INTERNAL_SERVER_ERROR', e?.message || "Internal Server Error")
 
     }
@@ -258,6 +265,7 @@ async function update_goal({ calories }, { supabase, signal, userId }) {
 
         return { success: true, data: "Updated Successfully" };
     } catch (e) {
+        logger.error({ err: e, tool: "update_goal", userId }, "AI tool failed");
         return errorMessage('INTERNAL_SERVER_ERROR', e?.message || "Internal Server Error")
     }
 }
@@ -302,6 +310,7 @@ async function get_deficiency_analysis(_, { supabase, signal, userId }) {
             data: { deficiencies, protein_target, calorie_target, today: today.data, profile: profile.data }
         };
     } catch (e) {
+        logger.error({ err: e, tool: "get_deficiency_analysis", userId }, "AI tool failed");
         return errorMessage('INTERNAL_SERVER_ERROR', e?.message || 'Internal Server Error');
     }
 }
@@ -381,6 +390,7 @@ async function generate_meal_recommendations({ meal_type = null }, { supabase, s
         };
 
     } catch (e) {
+        logger.error({ err: e, tool: "generate_meal_recommendations", userId }, "AI tool failed");
         return errorMessage('INTERNAL_SERVER_ERROR', e?.message || 'Internal Server Error');
     }
 }

@@ -22,6 +22,7 @@
     "jsonwebtoken": "^9.0.3",
     "langfuse": "^3.38.20",
     "openai": "^6.33.0",
+    "pino": "^10.4.0",
     "razorpay": "^2.9.6",
     "resend": "^6.14.0",
     "serverless-http": "^4.0.0"

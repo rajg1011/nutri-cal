@@ -1,6 +1,7 @@
 import Razorpay from "razorpay";
 import crypto from "crypto";
 import { SUBSCRIPTION_TYPE_PRO } from "../../../constant.js";
+import logger from "../../../utils/logger.js";
 
 export const razorPay = (() => {
     const razorpay = new Razorpay({
@@ -26,7 +27,7 @@ export const razorPay = (() => {
                     amount: response.amount
                 }
             } catch (e) {
-                console.log(e);
+                logger.error({ err: e, userId: user_id, subscription }, "Razorpay order creation failed");
                 throw new Error("Failed to create order");
             }
         },
@@ -65,7 +66,7 @@ export const razorPay = (() => {
                     status: response.status,
                 }
             } catch (e) {
-                console.log(e);
+                logger.error({ err: e, userId: user_id }, "Razorpay subscription creation failed");
                 throw new Error("Failed to create subscription");
             }
         }

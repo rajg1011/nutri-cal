@@ -6,6 +6,7 @@ import { deleteCache, getCache, setCache } from "../../services/cache/cache.js"
 import { Keys, TTL } from "../../utils/cacheKeys.js"
 import queueService from "../../services/queue/queueService.js"
 import { JOB_TYPES } from "../../services/queue/jobTypes.js"
+import logger from "../../utils/logger.js"
 
 const createOrderController = async (req, res) => {
     try {
@@ -30,6 +31,7 @@ const createOrderController = async (req, res) => {
         }).select('*')
 
         if (error) {
+            logger.error({ err: error, userId: req.user }, "Error inserting userPaymentDetails");
             throw new Error("Error in inserting order");
         }
 
@@ -43,12 +45,13 @@ const createOrderController = async (req, res) => {
             .eq("id", data[0].id);
 
         if (err) {
+            logger.error({ err, userId: req.user, orderId: createOrder?.order_id }, "Error updating order_id in userPaymentDetails");
             throw new Error("Error in updating order");
         }
 
         res.status(201).json(createOrder)
     } catch (e) {
-        console.log(e)
+        logger.error({ err: e, userId: req.user }, "Error in createOrderController");
         return res.status(500).json({ success: false, message: "Internal Server Error" })
     }
 }
@@ -67,7 +70,7 @@ const verifyPaymentController = async (req, res) => {
             if (mode === "order") {
                 const { _, error } = await supabaseAdmin.from('userPaymentDetails').update({ subscription_status: "FAILED" }).eq('order_id', order_id)
                 if (error) {
-                    console.log("Error in updating payment status")
+                    logger.error({ err: error, userId: req.user, orderId: order_id }, "Error updating payment status to FAILED")
                 }
             }
             return res.status(400).json({
@@ -81,6 +84,7 @@ const verifyPaymentController = async (req, res) => {
         if (mode === "order") {
             const { data, error } = await supabaseAdmin.from('userPaymentDetails').select('*').eq('order_id', order_id).eq('user_id', req.user).single();
             if (error) {
+                logger.error({ err: error, userId: req.user, orderId: order_id }, "Error fetching userPaymentDetails in verifyPaymentController");
                 return res.status(500).json({ success: false, message: "Internal Server Error" })
             }
 
@@ -97,7 +101,10 @@ const verifyPaymentController = async (req, res) => {
                 });
             }
 
-            await supabaseAdmin.from('userPaymentDetails').update({ subscription_status: "CONFIRM", payment_id: payment_id }).eq('order_id', order_id).eq('user_id', req.user);
+            const { error: confirmError } = await supabaseAdmin.from('userPaymentDetails').update({ subscription_status: "CONFIRM", payment_id: payment_id }).eq('order_id', order_id).eq('user_id', req.user);
+            if (confirmError) {
+                logger.error({ err: confirmError, userId: req.user, orderId: order_id }, "Error updating payment status to CONFIRM");
+            }
             purchasedPlan = data.plan.toUpperCase();
         } else {
             purchasedPlan = SUBSCRIPTION_TYPE_PRO;
@@ -125,6 +132,7 @@ const verifyPaymentController = async (req, res) => {
                 .upsert(updatePayload, { onConflict: 'user_id' });
 
             if (subError) {
+                logger.error({ err: subError, userId: req.user, plan: purchasedPlan }, "Error upserting userSubscriptionDetails in verifyPaymentController");
                 return res.status(500).json({ success: false, message: "Internal Server Error" })
             }
 
@@ -141,7 +149,7 @@ const verifyPaymentController = async (req, res) => {
                     });
                 }
             } catch (emailError) {
-                console.log("Error enqueueing subscription email:", emailError);
+                logger.error({ err: emailError, userId: req.user }, "Error enqueueing subscription email");
             }
         }
 
@@ -150,7 +158,7 @@ const verifyPaymentController = async (req, res) => {
         return res.status(200).json({ success: true, message: "Subscription Successful" })
 
     } catch (e) {
-        console.log(e)
+        logger.error({ err: e, userId: req.user }, "Error in verifyPaymentController");
         return res.status(500).json({ success: false, message: "Internal Server Error" })
     }
 }
@@ -171,7 +179,7 @@ const createPlanController = async (req, res) => {
         const createPlan = await paymentService.createProPlanSubscription({ user_id: req.user });
         res.status(201).json(createPlan)
     } catch (e) {
-        console.log(e)
+        logger.error({ err: e, userId: req.user }, "Error in createPlanController");
         return res.status(500).json({ success: false, message: "Internal Server Error" })
     }
 }
@@ -191,7 +199,7 @@ const checkSubscriptionController = async (req, res) => {
             .eq('status', 'ACTIVE');
 
         if (error) {
-            console.log("Error in checkSubscriptionController:", error);
+            logger.error({ err: error, userId: req.user }, "Error fetching userSubscriptionDetails in checkSubscriptionController");
             return res.status(500).json({ success: false, message: "Internal Server Error" });
         }
 
@@ -202,7 +210,7 @@ const checkSubscriptionController = async (req, res) => {
 
         return res.status(200).json({ success: true, isAvailable });
     } catch (e) {
-        console.log(e);
+        logger.error({ err: e, userId: req.user }, "Error in checkSubscriptionController");
         return res.status(500).json({ success: false, message: "Internal Server Error" });
     }
 }

@@ -1,4 +1,5 @@
 import { razorPay } from "./provider/razorpay.js";
+import logger from "../../utils/logger.js";
 
 const provider = {
     "razorpay": razorPay
@@ -23,7 +24,7 @@ const paymentService = (() => {
             }
         }
     } catch (e) {
-        console.log(e)
+        logger.error({ err: e }, "Error initializing paymentService provider")
         throw e
     }
 })()

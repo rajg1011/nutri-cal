@@ -2,6 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import { decodedToken } from "../utils/getJWTInfo.js";
 import { Keys } from "../utils/cacheKeys.js";
 import { getCache, setCache } from "../services/cache/cache.js";
+import logger from "../utils/logger.js";
 
 const supabase = createClient(process.env.SUPABASE_PROJECT_URL, process.env.SUPABASE_ANON_KEY)
 
@@ -51,7 +52,7 @@ const AuthMiddleWare = async (req, res, next) => {
 
         return next();
     } catch (e) {
-        console.log(e)
+        logger.error({ err: e, path: req.path }, "Error in AuthMiddleWare");
         return res.status(500).json({ message: "Internal Server Error" })
     }
 }

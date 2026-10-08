@@ -1,10 +1,11 @@
 import langfuse from "../../../config/langfuse.js";
+import logger from "../../../utils/logger.js";
 
 const safeFlush = async () => {
     try {
         await langfuse.flushAsync();
     } catch (e) {
-        console.log(e, "Langfuse flush failed");
+        logger.warn({ err: e }, "Langfuse flush failed");
     }
 };
 

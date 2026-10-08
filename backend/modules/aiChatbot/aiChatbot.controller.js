@@ -3,6 +3,7 @@ import supabaseAdmin from "../../config/supabaseAdmin.js";
 import { getCache, setCache, deleteCache } from "../../services/cache/cache.js";
 import { Keys, TTL } from "../../utils/cacheKeys.js";
 import { SUBSCRIPTION_TYPE_QUESTION } from "../../constant.js";
+import logger from "../../utils/logger.js";
 
 const DEFAULT_HISTORY_LIMIT = 10;
 
@@ -23,7 +24,7 @@ const aiChatbotController = async (req, res) => {
       const { data: remaining, error } = await supabaseAdmin.rpc('decrement_question_credit', { p_user_id: req.user });
 
       if (error) {
-        console.log("Error decrementing question credit:", error);
+        logger.error({ err: error, userId: req.user }, "Error decrementing question credit");
       } else if (!remaining || remaining.length === 0 || remaining[0].question_asked <= 0) {
         await deleteCache(Keys.userSubscribe(req.user));
       }
@@ -31,7 +32,7 @@ const aiChatbotController = async (req, res) => {
 
     return res.status(200).json({ success: true, response })
   } catch (e) {
-    console.log(e)
+    logger.error({ err: e, userId: req.user }, "Error in aiChatbotController");
     return res.status(500).json({ success: false, message: "Internal Server Error" })
   }
 }
@@ -71,7 +72,7 @@ const getChatHistoryController = async (req, res) => {
 
     return res.status(200).json({ success: true, history })
   } catch (e) {
-    console.log(e)
+    logger.error({ err: e, userId: req.user }, "Error in getChatHistoryController");
     return res.status(500).json({ success: false, message: "Internal Server Error" })
   }
 }

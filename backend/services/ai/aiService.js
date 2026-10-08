@@ -1,6 +1,7 @@
 import { promptBuilderforChatbot } from "./promptBuilder.js";
 import generateOpenAIResponse, { completeOpenAI } from "./provider/openAi.js";
 import { getContext, appendTurn } from "./memory/conversationMemory.js";
+import logger from "../../utils/logger.js";
 
 const providers = {
   openai: { generateResponse: generateOpenAIResponse, complete: completeOpenAI },
@@ -40,13 +41,13 @@ const aiServiceResponse = async (message, toolContext = {}) => {
         complete: provider.complete,
       });
     } catch (memoryError) {
-      console.log(memoryError, "Failed to persist conversation memory");
+      logger.error({ err: memoryError, userId }, "Failed to persist conversation memory");
     }
 
     return content
 
   } catch (e) {
-    console.log(e)
+    logger.error({ err: e, userId: toolContext.userId }, "Error in aiServiceResponse")
     throw e
   }
 }

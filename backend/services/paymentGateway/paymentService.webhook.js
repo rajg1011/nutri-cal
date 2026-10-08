@@ -7,6 +7,7 @@ import { Keys } from "../../utils/cacheKeys.js";
 import queueService from "../queue/queueService.js";
 import { JOB_TYPES } from "../queue/jobTypes.js";
 import getUserContact from "../../utils/getUserContact.js";
+import logger from "../../utils/logger.js";
 
 const enqueueSubscriptionEmail = async ({ user_id, plan, price, endDate, questionsRemaining }) => {
     try {
@@ -21,7 +22,7 @@ const enqueueSubscriptionEmail = async ({ user_id, plan, price, endDate, questio
             questionsRemaining,
         });
     } catch (emailError) {
-        console.log("Error enqueueing subscription email:", emailError);
+        logger.error({ err: emailError, userId: user_id }, "Error enqueueing subscription email");
     }
 };
 
@@ -37,10 +38,14 @@ const handlePaymentAuthorizedLogic = async ({ user_id, payment_id, subscription,
         const { data, error } = await supabaseAdmin.from("userSubscriptionDetails").select('*').eq('user_id', user_id).eq('status', 'ACTIVE')
 
         if (error) {
+            logger.error({ err: error, userId: user_id }, "Supabase error in handlePaymentAuthorizedLogic fetch");
             throw new Error("Error at handlePayementAuthorizedLogic's fetch query")
         }
         if (!isSubscriptionActive(data)) {
-            await supabaseAdmin.from('userPaymentDetails').update({ subscription_status: "CONFIRM", payment_id }).eq('order_id', order_id).eq('user_id', user_id);
+            const { error: confirmError } = await supabaseAdmin.from('userPaymentDetails').update({ subscription_status: "CONFIRM", payment_id }).eq('order_id', order_id).eq('user_id', user_id);
+            if (confirmError) {
+                logger.error({ err: confirmError, userId: user_id, orderId: order_id }, "Error updating payment status to CONFIRM in webhook");
+            }
 
             const purchasedPlan = subscription.toUpperCase();
             let updatePayload = {
@@ -64,6 +69,7 @@ const handlePaymentAuthorizedLogic = async ({ user_id, payment_id, subscription,
                     onConflict: 'user_id'
                 });
             if (subError) {
+                logger.error({ err: subError, userId: user_id, plan: purchasedPlan }, "Supabase error in handlePaymentAuthorizedLogic upsert");
                 throw new Error("Error at handlePayementAuthorizedLogic's update query")
             }
 
@@ -78,7 +84,7 @@ const handlePaymentAuthorizedLogic = async ({ user_id, payment_id, subscription,
         await deleteCache(Keys.userSubscribe(user_id))
         return true
     } catch (error) {
-        console.error("Error in webhook:", error);
+        logger.error({ err: error, userId: user_id, orderId: order_id, paymentId: payment_id }, "Error in handlePaymentAuthorizedLogic");
         return null
     }
 };
@@ -95,6 +101,7 @@ const handleSubscriptionCharged = async ({ user_id, subscription_id, subscriptio
             .eq('user_id', user_id);
 
         if (fetchError) {
+            logger.error({ err: fetchError, userId: user_id }, "Supabase error in handleSubscriptionCharged fetch");
             throw new Error("Error at handleSubscriptionCharged's fetch query")
         }
 
@@ -134,6 +141,7 @@ const handleSubscriptionCharged = async ({ user_id, subscription_id, subscriptio
         const { error: subError } = await supabaseAdmin.from('userSubscriptionDetails')
             .upsert(updatePayload, { onConflict: 'user_id' })
         if (subError) {
+            logger.error({ err: subError, userId: user_id, plan: purchasedPlan }, "Supabase error in handleSubscriptionCharged upsert");
             throw new Error("Error at handleSubscriptionCharged's update query")
         }
 
@@ -152,7 +160,7 @@ const handleSubscriptionCharged = async ({ user_id, subscription_id, subscriptio
 
     }
     catch (error) {
-        console.error("Error in webhook:", error);
+        logger.error({ err: error, userId: user_id, subscriptionId: subscription_id }, "Error in handleSubscriptionCharged");
         return null
     }
 }
@@ -180,7 +188,7 @@ const paymentServiceWebhook = (() => {
             }
         }
     } catch (e) {
-        console.log(e)
+        logger.error({ err: e }, "Error initializing paymentServiceWebhook provider")
         throw e
     }
 })()

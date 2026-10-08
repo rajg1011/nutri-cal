@@ -4,6 +4,7 @@ import { withTimeout } from "../../../utils/abortReq.js";
 import { validMealTypes, MEAL_UNITS } from "../../../constant.js";
 import langfuse from "../../../config/langfuse.js";
 import { safeFlush } from "../observability/langfuse.js";
+import logger from "../../../utils/logger.js";
 
 
 const client = new OpenAI({
@@ -231,6 +232,7 @@ const generateOpenAIResponse = async (inputMessages, toolContext = {}) => {
         "OpenAI API call"
       );
     } catch (e) {
+      logger.error({ err: e, round, userId: toolContext.userId }, "OpenAI API call failed");
       generation.end({ level: "ERROR", statusMessage: e.message });
       await safeFlush();
       throw e;
@@ -255,12 +257,11 @@ const generateOpenAIResponse = async (inputMessages, toolContext = {}) => {
 
     const toolResponses = await Promise.all(
       toolCalls.map(async (toolCall) => {
+        const span = trace.span({
+          name: `tool:${toolCall.function.name}`,
+          input: toolCall.function.arguments,
+        });
         try {
-          const span = trace.span({
-            name: `tool:${toolCall.function.name}`,
-            input: toolCall.function.arguments,
-          });
-
           const args = JSON.parse(
             toolCall.function.arguments
           );
@@ -284,6 +285,7 @@ const generateOpenAIResponse = async (inputMessages, toolContext = {}) => {
             content: JSON.stringify(result),
           };
         } catch (error) {
+          logger.error({ err: error, tool: toolCall.function.name, userId: toolContext.userId }, "AI tool call failed");
           span.end({ level: "ERROR", statusMessage: error.message ?? String(error) });
           return {
             role: "tool",
@@ -300,7 +302,7 @@ const generateOpenAIResponse = async (inputMessages, toolContext = {}) => {
   trace.update({ output: "exhausted-rounds" });
   await safeFlush();  // we are flushing bcz lambda will freez as request complete.
 
-  console.log({ rounds: MAX_TOOL_ROUNDS }, "Exhausted tool rounds")
+  logger.warn({ rounds: MAX_TOOL_ROUNDS, userId: toolContext.userId }, "Exhausted tool rounds")
   return {
     content: "I could not finish that request because too many tool calls were needed. Please ask a narrower question.",
     usage,
