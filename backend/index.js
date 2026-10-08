@@ -12,7 +12,7 @@ import logger from "./utils/logger.js";
 
 const app = express();
 app.use(cors({
-    origin: 'http://localhost:5173',
+    origin: 'https://nutri-cal.pages.dev',
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     credentials: true
 }));
@@ -39,9 +39,9 @@ process.on("uncaughtException", (err) => {
     process.exit(1);
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    logger.info({ port: PORT }, "NutriCal Backend is running");
-});
+// const PORT = process.env.PORT || 3000;
+// app.listen(PORT, () => {
+//     logger.info({ port: PORT }, "NutriCal Backend is running");
+// });
 
 export default app;
