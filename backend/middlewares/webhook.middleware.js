@@ -2,6 +2,20 @@ import paymentServiceWebhook from "../services/paymentGateway/paymentService.web
 import supabaseAdmin from "../config/supabaseAdmin.js";
 
 
+const verifyWebhookSignature = async (req, res, next) => {
+    try {
+        const isValidSignature = await paymentServiceWebhook.validateWebhookSignature(req);
+        if (!isValidSignature) {
+            return res.status(400).json({ success: false, message: "Invalid signature" });
+        }
+    } catch (error) {
+        console.error("Error validating webhook signature:", error);
+        return res.status(400).json({ success: false, message: "Invalid signature" });
+    }
+
+    return next();
+};
+
 const checkDuplicateEvent = async (req, res, next) => {
     const eventId = paymentServiceWebhook.getEventId(req);
     if (!eventId) {
@@ -23,4 +37,18 @@ const checkDuplicateEvent = async (req, res, next) => {
     return next();
 };
 
-export { checkDuplicateEvent }
+const releaseWebhookEvent = async (req) => {
+    const eventId = paymentServiceWebhook.getEventId(req);
+    if (!eventId) return;
+
+    const { error } = await supabaseAdmin
+        .from('webhooksDeatails')
+        .delete()
+        .eq('webhook_id', eventId);
+
+    if (error) {
+        console.error("Error releasing webhook event:", error);
+    }
+};
+
+export { verifyWebhookSignature, checkDuplicateEvent, releaseWebhookEvent }

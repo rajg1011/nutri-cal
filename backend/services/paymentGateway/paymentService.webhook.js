@@ -83,7 +83,7 @@ const handlePaymentAuthorizedLogic = async ({ user_id, payment_id, subscription,
     }
 };
 
-const handleSubscriptionCharged = async ({ user_id, subscription_id, subscription }) => {
+const handleSubscriptionCharged = async ({ user_id, subscription_id, subscription, current_end, isCharge }) => {
     try {
         if (!user_id || !subscription_id || !subscription) {
             throw new Error("Invalid arguments at handleSubscriptionCharged")
@@ -117,9 +117,18 @@ const handleSubscriptionCharged = async ({ user_id, subscription_id, subscriptio
             updatePayload.question_asked = Constants.QUESTION_AKSED;
         } else if (purchasedPlan === SUBSCRIPTION_TYPE_PRO) {
             const currentEndDate = existing?.end_date ? new Date(existing.end_date) : null;
-            const baseDate = currentEndDate && currentEndDate > new Date() ? currentEndDate : new Date();
-            baseDate.setMonth(baseDate.getMonth() + 1);
-            updatePayload.end_date = baseDate.toISOString();
+            const activeEndDate = currentEndDate && currentEndDate > new Date() ? currentEndDate : null;
+
+            if (current_end) {
+                const cycleEndDate = new Date(current_end * 1000);
+                updatePayload.end_date = (activeEndDate && activeEndDate > cycleEndDate ? activeEndDate : cycleEndDate).toISOString();
+            } else if (isCharge || !activeEndDate) {
+                const baseDate = isCharge && activeEndDate ? new Date(activeEndDate) : new Date();
+                baseDate.setMonth(baseDate.getMonth() + 1);
+                updatePayload.end_date = baseDate.toISOString();
+            } else {
+                updatePayload.end_date = activeEndDate.toISOString();
+            }
         }
 
         const { error: subError } = await supabaseAdmin.from('userSubscriptionDetails')

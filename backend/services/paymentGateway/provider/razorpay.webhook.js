@@ -30,18 +30,24 @@ const handleWebhookLogic = async (req) => {
     const { event, payload } = parseRawBody(req)
     switch (event) {
         case "payment.authorized": {
-            const { id: payment_id, order_id } = payload.payment.entity;
-            const { user_id, subscription } = payload.payment.entity.notes
+            const { id: payment_id, order_id, invoice_id, notes } = payload.payment.entity;
+            const { user_id, subscription } = notes || {};
+            if (invoice_id || !order_id || !user_id || !subscription) {
+                console.log(`Skipping payment.authorized for non-order payment: ${payment_id}`);
+                return true;
+            }
             return await handlePaymentAuthorizedLogic({ user_id, payment_id, subscription, order_id });
         }
         case "subscription.charged":
         case "subscription.activated": {
-            const { user_id: user, subscription: subType } = payload.subscription.entity.notes;
-            const { id: subscription_id } = payload.subscription.entity;
+            const { user_id: user, subscription: subType } = payload.subscription.entity.notes || {};
+            const { id: subscription_id, current_end } = payload.subscription.entity;
             return await handleSubscriptionCharged({
                 subscription: subType || SUBSCRIPTION_TYPE_PRO,
                 user_id: user,
-                subscription_id
+                subscription_id,
+                current_end,
+                isCharge: event === "subscription.charged"
             });
         }
         default:
